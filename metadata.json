@@ -1,0 +1,6 @@
+{
+  "name": "Delivery Whitelabel",
+  "description": "Plataforma de delivery whitelabel mobile-first otimizada para pequenos comércios locais, com cardápio dinâmico, carrinho de compras, integração de pedidos via WhatsApp e scripts Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
