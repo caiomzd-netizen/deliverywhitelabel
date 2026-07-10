@@ -541,8 +541,8 @@ INSERT INTO usuarios (id, nome, email, senha, role, loja_id, ativo)
 VALUES (
     uuid_generate_v4(),
     'Administrador Master',
-    'admin@deliverywl.com',
-    'admin123',
+    'admin@admin',
+    'Dalchau1988#@',
     'admin_geral',
     NULL,
     true

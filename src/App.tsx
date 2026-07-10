@@ -49,6 +49,13 @@ export default function App() {
   };
 
   useEffect(() => {
+    const p = window.location.pathname.replace(/\/+$/, '');
+    if (p && p !== '') {
+      window.location.hash = `#${p}`;
+    }
+  }, []);
+
+  useEffect(() => {
     refreshLojas();
   }, []);
 

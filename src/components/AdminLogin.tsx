@@ -9,7 +9,7 @@ interface AdminLoginProps {
   onBack: () => void;
 }
 
-const MASTER_CREDENTIALS = { email: 'admin@deliverywl.com', senha: 'admin123' };
+const MASTER_CREDENTIALS = { email: 'admin@admin', senha: 'Dalchau1988#@' };
 
 export default function AdminLogin({ mode, loja, onLoginSuccess, onBack }: AdminLoginProps) {
   const [email, setEmail] = useState('');
@@ -107,7 +107,7 @@ export default function AdminLogin({ mode, loja, onLoginSuccess, onBack }: Admin
 
           {mode === 'master' && (
             <p className="text-[10px] text-slate-500 text-center">
-              Credenciais padrão: <span className="font-mono text-slate-400">admin@deliverywl.com</span> / <span className="font-mono text-slate-400">admin123</span>
+              Credenciais padrão: <span className="font-mono text-slate-400">admin@admin</span> / <span className="font-mono text-slate-400">Dalchau1988#@</span>
             </p>
           )}
 
