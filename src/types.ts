@@ -4,13 +4,15 @@ export interface Loja {
   slug_url: string;
   logo: string;
   banner: string;
-  cor_tema: string; // Tailwind color class prefix or hex value
+  cor_tema: string;
   cor_secundaria?: string;
-  telefone_whatsapp: string; // Format: 5511999999999
+  telefone_whatsapp: string;
   endereco_fisico?: string;
   taxa_entrega: number;
   tempo_entrega: string;
   ativo: boolean;
+  niche?: string;
+  pwa_icon_url?: string;
 }
 
 export interface Produto {

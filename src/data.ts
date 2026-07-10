@@ -14,6 +14,8 @@ export const DEMO_LOJAS: Loja[] = [
     taxa_entrega: 7.00,
     tempo_entrega: '35-45 min',
     ativo: true,
+    niche: 'hamburgueria',
+    pwa_icon_url: 'https://cdn-icons-png.flaticon.com/512/3062/3062634.png',
   },
   {
     id: 'loja-2',
@@ -28,6 +30,8 @@ export const DEMO_LOJAS: Loja[] = [
     taxa_entrega: 9.00,
     tempo_entrega: '45-60 min',
     ativo: true,
+    niche: 'restaurante',
+    pwa_icon_url: 'https://cdn-icons-png.flaticon.com/512/3062/3062634.png',
   },
   {
     id: 'loja-3',
@@ -42,6 +46,8 @@ export const DEMO_LOJAS: Loja[] = [
     taxa_entrega: 12.00,
     tempo_entrega: '40-55 min',
     ativo: true,
+    niche: 'restaurante',
+    pwa_icon_url: 'https://cdn-icons-png.flaticon.com/512/3062/3062634.png',
   },
   {
     id: 'loja-4',
@@ -56,6 +62,8 @@ export const DEMO_LOJAS: Loja[] = [
     taxa_entrega: 4.50,
     tempo_entrega: '15-30 min',
     ativo: true,
+    niche: 'distribuidora_bebidas',
+    pwa_icon_url: 'https://cdn-icons-png.flaticon.com/512/3062/3062634.png',
   },
   {
     id: 'loja-5',
@@ -70,6 +78,8 @@ export const DEMO_LOJAS: Loja[] = [
     taxa_entrega: 0.00,
     tempo_entrega: '20-40 min',
     ativo: true,
+    niche: 'distribuidora_gas_agua',
+    pwa_icon_url: 'https://cdn-icons-png.flaticon.com/512/3062/3062634.png',
   },
   {
     id: 'loja-6',
@@ -84,6 +94,8 @@ export const DEMO_LOJAS: Loja[] = [
     taxa_entrega: 6.00,
     tempo_entrega: '25-40 min',
     ativo: true,
+    niche: 'mini_mercado',
+    pwa_icon_url: 'https://cdn-icons-png.flaticon.com/512/3062/3062634.png',
   }
 ];
 

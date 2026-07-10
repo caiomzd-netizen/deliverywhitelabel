@@ -8,6 +8,7 @@ import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
 import PWAPrompt from './components/PWAPrompt';
 import QRCodeDisplay from './components/QRCodeDisplay';
+import { updatePWAManifest } from './pwa';
 
 function parseHash(): { slug: string | null; isAdmin: boolean } {
   const hash = window.location.hash.replace('#/', '').replace(/\/+$/, '');
@@ -99,6 +100,10 @@ export default function App() {
     loadProducts();
     setCart([]);
   }, [currentLoja, triggerRefreshProducts]);
+
+  useEffect(() => {
+    updatePWAManifest(currentLoja);
+  }, [currentLoja]);
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
     setToast({ message, type });

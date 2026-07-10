@@ -4,14 +4,15 @@ import {
   Plus, Trash2, UserPlus, Settings, Layers, Sparkles, Filter, 
   Activity, CheckCircle2, ChevronRight, RefreshCw, Percent, QrCode,
   Smartphone, ExternalLink, LayoutDashboard, Bell, Clock, 
-  ArrowRight, XCircle
+  ArrowRight, XCircle, Package
 } from 'lucide-react';
 import QRCodeDisplay from './QRCodeDisplay';
-import { SQL_SCHEMA_SCRIPT } from '../data';
+import { SQL_SCHEMA_SCRIPT, DEMO_PRODUTOS } from '../data';
 import { 
   isSupabaseConfigured, fetchPedidosLocais, getCustomLojas, 
   saveCustomLoja, getCustomProdutos, saveCustomProduto, deleteCustomProduto,
-  getCustomGerentes, saveCustomGerente, updatePedidoStatusLocal
+  getCustomGerentes, saveCustomGerente, updatePedidoStatusLocal,
+  getCustomAtendentes, saveCustomAtendente
 } from '../supabase';
 import { Pedido, Loja, Produto, Gerente } from '../types';
 
@@ -45,8 +46,7 @@ export default function AdminPanel({
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Role simulation: Admin Geral can register any store, Gerente de Loja manages the current store
-  const [userRole, setUserRole] = useState<'admin_geral' | 'gerente_loja'>('admin_geral');
+  // Role is now determined by loggedGerente: master admin (null) or gerente (non-null)
 
   // --- Form States for New Store ---
   const [novaLojaNome, setNovaLojaNome] = useState('');
@@ -59,6 +59,21 @@ export default function AdminPanel({
   const [novaLojaCor, setNovaLojaCor] = useState('#f97316'); // default orange-500
   const [customLogoUrl, setCustomLogoUrl] = useState('');
   const [customBannerUrl, setCustomBannerUrl] = useState('');
+  const [novaLojaPwaIcon, setNovaLojaPwaIcon] = useState('');
+
+  // --- Store configuration editing state ---
+  const [editingStoreId, setEditingStoreId] = useState<string | null>(null);
+  const [storeFormNome, setStoreFormNome] = useState('');
+  const [storeFormSlug, setStoreFormSlug] = useState('');
+  const [storeFormLogo, setStoreFormLogo] = useState('');
+  const [storeFormBanner, setStoreFormBanner] = useState('');
+  const [storeFormWhatsApp, setStoreFormWhatsApp] = useState('');
+  const [storeFormEndereco, setStoreFormEndereco] = useState('');
+  const [storeFormTaxa, setStoreFormTaxa] = useState('');
+  const [storeFormTempo, setStoreFormTempo] = useState('');
+  const [storeFormCor, setStoreFormCor] = useState('#f97316');
+  const [storeFormNiche, setStoreFormNiche] = useState('hamburgueria');
+  const [storeFormPwaIcon, setStoreFormPwaIcon] = useState('');
 
   // --- Form States for Products ---
   const [editingProduto, setEditingProduto] = useState<Produto | null>(null);
@@ -75,6 +90,12 @@ export default function AdminPanel({
   const [novaLojaGerenteEmail, setNovaLojaGerenteEmail] = useState('');
   const [novaLojaGerenteSenha, setNovaLojaGerenteSenha] = useState('');
 
+  // --- Form States for Attendant Creation ---
+  const [atendenteNome, setAtendenteNome] = useState('');
+  const [atendenteEmail, setAtendenteEmail] = useState('');
+  const [atendenteSenha, setAtendenteSenha] = useState('');
+  const [atendentesList, setAtendentesList] = useState<Gerente[]>([]);
+
   // --- Login States ---
   const [loginEmail, setLoginEmail] = useState('');
   const [loginSenha, setLoginSenha] = useState('');
@@ -85,13 +106,8 @@ export default function AdminPanel({
 
   useEffect(() => {
     setGerentesList(getCustomGerentes());
+    setAtendentesList(getCustomAtendentes());
   }, []);
-
-  useEffect(() => {
-    if (loggedGerente) {
-      setUserRole('gerente_loja');
-    }
-  }, [loggedGerente]);
 
   // Load orders
   useEffect(() => {
@@ -101,6 +117,29 @@ export default function AdminPanel({
     }
     loadPedidos();
   }, [activeOrderCount, triggerRefreshOrders, activeTab]);
+
+  const isGerente = !!loggedGerente;
+
+  const handleRegisterAtendente = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!atendenteNome || !atendenteEmail || !atendenteSenha) {
+      alert('Preencha todos os dados do atendente.');
+      return;
+    }
+    const novo: Gerente = {
+      id: `atd-custom-${Date.now()}`,
+      nome: atendenteNome,
+      email: atendenteEmail.trim().toLowerCase(),
+      senha: atendenteSenha,
+      loja_id: currentLoja.id
+    };
+    saveCustomAtendente(novo);
+    setAtendentesList(getCustomAtendentes());
+    setAtendenteNome('');
+    setAtendenteEmail('');
+    setAtendenteSenha('');
+    alert(`Atendente "${novo.nome}" cadastrado com sucesso!`);
+  };
 
   const handleCopySQL = () => {
     navigator.clipboard.writeText(SQL_SCHEMA_SCRIPT);
@@ -189,7 +228,9 @@ export default function AdminPanel({
       endereco_fisico: novaLojaEndereco || 'Disponível na sua região',
       taxa_entrega: parseFloat(novaLojaTaxa) || 0,
       tempo_entrega: novaLojaTempo,
-      ativo: true
+      ativo: true,
+      niche: novaLojaNiche,
+      pwa_icon_url: novaLojaPwaIcon || undefined
     };
 
     saveCustomLoja(nova);
@@ -217,6 +258,7 @@ export default function AdminPanel({
     setNovaLojaEndereco('');
     setCustomLogoUrl('');
     setCustomBannerUrl('');
+    setNovaLojaPwaIcon('');
     setNovaLojaGerenteNome('');
     setNovaLojaGerenteEmail('');
     setNovaLojaGerenteSenha('');
@@ -411,6 +453,19 @@ export default function AdminPanel({
     setProdEstoque('25');
   };
 
+  const handleImportPredefinedMenu = () => {
+    if (!confirm('Importar cardápio pré-definido com base no segmento da loja? Isso adicionará produtos de exemplo ao cardápio atual.')) return;
+    const segmentKey = currentLoja.niche || 'hamburgueria';
+    const demo: Produto[] = DEMO_PRODUTOS.map((p) => ({
+      ...p,
+      id: `prod-custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      loja_id: currentLoja.id,
+    }));
+    demo.forEach((p) => saveCustomProduto(p));
+    onRefreshProducts();
+    alert(`Cardápio pré-definido importado com sucesso (${demo.length} produtos)!`);
+  };
+
   // Get active products for this store
   // Since we also have demo products loaded in app, let's grab the custom ones or the active product list
   const activeNichePreset = Object.keys(NICHE_PRESETS).find(
@@ -437,31 +492,6 @@ export default function AdminPanel({
           </div>
           
           <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-3">
-            {/* Simulador de Cargo */}
-            <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
-              <button
-                type="button"
-                onClick={() => setUserRole('admin_geral')}
-                className={`px-3 py-1.5 rounded-md font-bold transition ${
-                  userRole === 'admin_geral'
-                    ? 'bg-orange-500 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Admin Geral (Cria Lojas)
-              </button>
-              <button
-                type="button"
-                onClick={() => setUserRole('gerente_loja')}
-                className={`px-3 py-1.5 rounded-md font-bold transition ${
-                  userRole === 'gerente_loja'
-                    ? 'bg-orange-500 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Gerente da Loja Ativa
-              </button>
-            </div>
 
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
               isSupabaseConfigured 
@@ -525,7 +555,7 @@ export default function AdminPanel({
         )}
 
         {/* Informações Whitelabel para oferecer a Distribuidoras e Comércios */}
-        <div className="p-4 rounded-xl bg-orange-950/20 border border-orange-500/20 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        {!isGerente && <div className="p-4 rounded-xl bg-orange-950/20 border border-orange-500/20 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="space-y-1">
             <h4 className="font-bold text-orange-400 flex items-center gap-1.5">
               <Sparkles size={14} /> Foco em Distribuidoras
@@ -550,7 +580,7 @@ export default function AdminPanel({
               Você pode vender esse sistema como um serviço mensal (SaaS). Cada cliente tem sua URL e painel próprio, rodando na mesma infraestrutura!
             </p>
           </div>
-        </div>
+        </div>}
 
         {/* Tabs de Navegação */}
         <div className="flex overflow-x-auto border-b border-slate-800 gap-2 scrollbar-none pb-0.5">
@@ -611,18 +641,20 @@ export default function AdminPanel({
             )}
           </button>
 
-          <button
-            id="tab-sql"
-            onClick={() => { setActiveTab('sql'); handleResetProductForm(); }}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'sql'
-                ? 'border-orange-500 text-orange-400 bg-orange-950/20'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
-            }`}
-          >
-            <FileText size={16} />
-            Código SQL Supabase
-          </button>
+          {!isGerente && (
+            <button
+              id="tab-sql"
+              onClick={() => { setActiveTab('sql'); handleResetProductForm(); }}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+                activeTab === 'sql'
+                  ? 'border-orange-500 text-orange-400 bg-orange-950/20'
+                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+              }`}
+            >
+              <FileText size={16} />
+              Código SQL Supabase
+            </button>
+          )}
         </div>
 
         {/* ==================== TAB CONTENT: DASHBOARD ==================== */}
@@ -646,7 +678,7 @@ export default function AdminPanel({
           <div className="space-y-6">
             
             {/* Seção de Cadastro de Novo Usuário / Comerciante */}
-            {userRole === 'admin_geral' ? (
+            {!isGerente ? (
               <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800/80 space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
                   <UserPlus className="text-orange-500" size={18} />
@@ -770,6 +802,19 @@ export default function AdminPanel({
                     </div>
                   </div>
 
+                  {/* PWA Icon URL */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase">Ícone PWA (URL) — Opcional</label>
+                    <input
+                      type="text"
+                      placeholder="https://... (deixe vazio para usar o ícone padrão)"
+                      value={novaLojaPwaIcon}
+                      onChange={(e) => setNovaLojaPwaIcon(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    />
+                    <p className="text-[10px] text-slate-500">Ícone exibido quando o cliente instalar o app (PWA) no celular.</p>
+                  </div>
+
                   {/* Dados de Acesso do Gerente */}
                   <div className="md:col-span-2 pt-2 border-t border-slate-800">
                     <div className="flex items-center gap-2 pb-3">
@@ -824,96 +869,245 @@ export default function AdminPanel({
                   </div>
                 </form>
               </div>
-            ) : (
-              <div className="bg-slate-800/30 p-4 rounded-xl border border-dashed border-slate-800 text-xs text-center space-y-2">
-                <Info className="mx-auto text-orange-400" size={20} />
-                <h4 className="font-bold text-slate-200">Acesso Restrito ao Gerente</h4>
-                <p className="text-slate-400 max-w-md mx-auto">
-                  Você está simulando o cargo de <strong>Gerente da Loja Ativa</strong>. Para cadastrar novas lojas ou adegas no sistema como um administrador da plataforma SaaS, altere o seletor de cargo no topo para <strong>"Admin Geral"</strong>.
-                </p>
+            ) : isGerente && (
+              <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800/80 space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+                  <UserPlus className="text-orange-500" size={18} />
+                  <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider">Cadastrar Atendente (Apenas visualiza pedidos)</h3>
+                </div>
+                <form onSubmit={handleRegisterAtendente} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase">Nome *</label>
+                    <input type="text" required placeholder="Ex: Maria" value={atendenteNome} onChange={(e) => setAtendenteNome(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase">Email *</label>
+                    <input type="email" required placeholder="maria@email.com" value={atendenteEmail} onChange={(e) => setAtendenteEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase">Senha *</label>
+                    <input type="password" required placeholder="••••••" value={atendenteSenha} onChange={(e) => setAtendenteSenha(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500" />
+                  </div>
+                  <div className="md:col-span-3 pt-2 flex justify-end">
+                    <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider py-2.5 px-5 rounded-xl flex items-center gap-2 cursor-pointer transition shadow-lg">
+                      <UserPlus size={15} /> Cadastrar Atendente
+                    </button>
+                  </div>
+                </form>
+                {atendentesList.filter((a) => a.loja_id === currentLoja.id).length > 0 && (
+                  <div className="pt-2 border-t border-slate-800">
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-2">Atendentes cadastrados:</h4>
+                    <div className="space-y-1.5">
+                      {atendentesList.filter((a) => a.loja_id === currentLoja.id).map((a) => (
+                        <div key={a.id} className="text-xs text-slate-300 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                          {a.nome} — <span className="text-slate-500">{a.email}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Lista de Lojas Disponíveis para Alternância */}
-            <div className="space-y-3">
+            {/* Lista de Lojas — Configuração de Clientes para Admin Master */}
+            {!isGerente && <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Alternar entre Lojas Ativas ({lojasList.length})</h3>
-                <span className="text-[10px] text-orange-400 font-bold">Simule o whitelabel instantaneamente</span>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Configuração de Clientes ({lojasList.length})</h3>
+                <span className="text-[10px] text-orange-400 font-bold">Gerencie dados de cada loja</span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {lojasList.map((loja) => {
                   const isSelected = currentLoja.id === loja.id;
+                  const storeGerente = gerentesList.find((g) => g.loja_id === loja.id);
+                  const isEditing = editingStoreId === loja.id;
                   return (
                     <div
                       key={loja.id}
-                      className={`flex flex-col rounded-xl overflow-hidden border transition-all ${
-                        isSelected
+                      className={`rounded-xl overflow-hidden border transition-all ${
+                        isEditing
                           ? 'border-orange-500 ring-2 ring-orange-500/30 bg-slate-800/60'
-                          : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                          : isSelected
+                            ? 'border-orange-500/50 bg-slate-800/40'
+                            : 'border-slate-800 bg-slate-900/60'
                       }`}
                     >
-                      <div className="h-28 w-full relative">
-                        <img
-                          src={loja.banner}
-                          alt={loja.nome}
-                          className="w-full h-full object-cover opacity-75"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 to-transparent" />
-                        <div className="absolute bottom-2.5 left-3 flex items-center gap-2.5">
-                          <img
-                            src={loja.logo}
-                            alt={loja.nome}
-                            className="w-9 h-9 rounded-full border border-white/30 object-cover bg-white"
-                          />
-                          <div>
-                            <span className="font-extrabold text-sm text-white drop-shadow-sm flex items-center gap-1.5">
-                              {loja.nome}
-                              {isSelected && <span className="bg-orange-500 text-[8px] text-white font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">Ativo</span>}
-                            </span>
-                            <span className="block text-[10px] text-slate-300 font-mono">/{loja.slug_url}</span>
+                      {!isEditing ? (
+                        <div className="p-4 flex flex-col md:flex-row md:items-center gap-4">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <img src={loja.logo} alt={loja.nome} className="w-12 h-12 rounded-full object-cover border border-white/20 shrink-0" />
+                            <div className="min-w-0">
+                              <div className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                                {loja.nome}
+                                {isSelected && <span className="bg-orange-500 text-[8px] text-white font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">Ativo</span>}
+                              </div>
+                              <div className="text-[11px] text-slate-400 font-mono truncate">/{loja.slug_url}</div>
+                              <div className="text-[11px] text-slate-500 mt-0.5">
+                                WhatsApp: <span className="text-slate-300">{loja.telefone_whatsapp}</span>
+                                <span className="mx-1.5">•</span>
+                                R$ {loja.taxa_entrega.toFixed(2)} • {loja.tempo_entrega}
+                              </div>
+                              {storeGerente && (
+                                <div className="text-[11px] text-orange-400/70 mt-0.5">
+                                  Gerente: {storeGerente.nome} ({storeGerente.email})
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingStoreId(loja.id);
+                                setStoreFormNome(loja.nome);
+                                setStoreFormSlug(loja.slug_url);
+                                setStoreFormLogo(loja.logo);
+                                setStoreFormBanner(loja.banner);
+                                setStoreFormWhatsApp(loja.telefone_whatsapp);
+                                setStoreFormEndereco(loja.endereco_fisico || '');
+                                setStoreFormTaxa(loja.taxa_entrega.toString());
+                                setStoreFormTempo(loja.tempo_entrega);
+                                setStoreFormCor(loja.cor_tema);
+                                setStoreFormNiche(loja.niche || 'hamburgueria');
+                                setStoreFormPwaIcon(loja.pwa_icon_url || '');
+                              }}
+                              className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg transition cursor-pointer border border-slate-700/50"
+                            >
+                              Configurar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onSelectLoja(loja)}
+                              className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${
+                                isSelected
+                                  ? 'bg-orange-500 text-white'
+                                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                              }`}
+                            >
+                              {isSelected ? 'Menu Carregado' : 'Carregar Menu'}
+                            </button>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="p-3.5 space-y-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">WhatsApp Comercial:</span>
-                          <span className="text-slate-200 font-mono">{loja.telefone_whatsapp}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Endereço:</span>
-                          <span className="text-slate-200 text-right truncate max-w-[200px]">{loja.endereco_fisico}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Parâmetros de Entrega:</span>
-                          <span className="text-slate-200 font-bold">R$ {loja.taxa_entrega.toFixed(2)} • {loja.tempo_entrega}</span>
-                        </div>
-
-                        <div className="pt-2 border-t border-slate-800/80 flex justify-between items-center">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: loja.cor_tema }} />
-                            <span className="text-[10px] font-mono font-bold" style={{ color: loja.cor_tema }}>{loja.cor_tema}</span>
+                      ) : (
+                        <div className="p-5 space-y-4">
+                          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <h4 className="font-extrabold text-sm text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                              <Settings size={16} /> Configuração: {loja.nome}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => setEditingStoreId(null)}
+                              className="text-[10px] text-slate-400 hover:text-slate-200 font-bold px-2 py-1 rounded-lg transition cursor-pointer"
+                            >
+                              Fechar
+                            </button>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => onSelectLoja(loja)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
-                              isSelected 
-                                ? 'bg-orange-500 text-white cursor-default' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer'
-                            }`}
-                          >
-                            {isSelected ? 'Menu Carregado' : 'Carregar Menu'}
-                          </button>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Nome</label>
+                              <input type="text" value={storeFormNome} onChange={(e) => setStoreFormNome(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Slug (URL)</label>
+                              <input type="text" value={storeFormSlug} onChange={(e) => setStoreFormSlug(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs font-mono text-orange-300" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">WhatsApp</label>
+                              <input type="text" value={storeFormWhatsApp} onChange={(e) => setStoreFormWhatsApp(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Logo (URL)</label>
+                              <input type="text" value={storeFormLogo} onChange={(e) => setStoreFormLogo(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Banner (URL)</label>
+                              <input type="text" value={storeFormBanner} onChange={(e) => setStoreFormBanner(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Segmento</label>
+                              <select value={storeFormNiche} onChange={(e) => setStoreFormNiche(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs text-slate-300">
+                                <option value="distribuidora_bebidas">Distribuidora de Bebidas</option>
+                                <option value="distribuidora_gas_agua">Gás & Água</option>
+                                <option value="mini_mercado">Mini Mercado</option>
+                                <option value="restaurante">Restaurante</option>
+                                <option value="hamburgueria">Hamburgueria</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Endereço</label>
+                              <input type="text" value={storeFormEndereco} onChange={(e) => setStoreFormEndereco(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Taxa Entrega (R$)</label>
+                              <input type="number" step="0.01" value={storeFormTaxa} onChange={(e) => setStoreFormTaxa(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Tempo Entrega</label>
+                              <input type="text" value={storeFormTempo} onChange={(e) => setStoreFormTempo(e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Cor Tema (hex)</label>
+                              <div className="flex gap-2 items-center">
+                                <input type="color" value={storeFormCor} onChange={(e) => setStoreFormCor(e.target.value)} className="w-9 h-9 rounded-lg border border-slate-800 bg-transparent cursor-pointer" />
+                                <input type="text" value={storeFormCor} onChange={(e) => setStoreFormCor(e.target.value)} className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs font-mono" />
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Ícone PWA (URL)</label>
+                              <input type="text" value={storeFormPwaIcon} onChange={(e) => setStoreFormPwaIcon(e.target.value)} placeholder="https://..." className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs" />
+                            </div>
+                          </div>
+
+                          {storeGerente && (
+                            <div className="pt-3 border-t border-slate-800 text-xs text-slate-400">
+                              Gerente vinculado: <span className="text-orange-300 font-semibold">{storeGerente.nome}</span> — <span className="text-slate-400">{storeGerente.email}</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingStoreId(null)}
+                              className="text-xs text-slate-400 hover:text-slate-200 font-bold px-4 py-2 rounded-xl transition cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated: Loja = {
+                                  ...loja,
+                                  nome: storeFormNome,
+                                  slug_url: storeFormSlug,
+                                  logo: storeFormLogo,
+                                  banner: storeFormBanner,
+                                  telefone_whatsapp: storeFormWhatsApp.replace(/\D/g, ''),
+                                  endereco_fisico: storeFormEndereco || 'Disponível na sua região',
+                                  taxa_entrega: parseFloat(storeFormTaxa) || 0,
+                                  tempo_entrega: storeFormTempo,
+                                  cor_tema: storeFormCor,
+                                  niche: storeFormNiche,
+                                  pwa_icon_url: storeFormPwaIcon || undefined,
+                                };
+                                saveCustomLoja(updated);
+                                onRefreshLojas();
+                                setEditingStoreId(null);
+                                alert(`Configurações de "${updated.nome}" salvas com sucesso!`);
+                              }}
+                              className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition cursor-pointer shadow-lg flex items-center gap-2"
+                            >
+                              <Check size={15} /> Salvar Configurações
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </div>}
 
           </div>
         )}
@@ -1036,6 +1230,18 @@ export default function AdminPanel({
                   </button>
                 </div>
               </form>
+            </div>
+
+            {/* Importar cardápio pré-definido */}
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={handleImportPredefinedMenu}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl flex items-center gap-2 cursor-pointer transition border border-slate-700/50"
+              >
+                <Package size={15} />
+                Importar Cardápio Pré-definido
+              </button>
             </div>
 
             {/* Listagem de Produtos Cadastrados da Loja Ativa */}
@@ -1161,6 +1367,32 @@ export default function AdminPanel({
                         ))}
                       </div>
                     </div>
+
+                    {/* Status Actions */}
+                    {p.status !== 'entregue' && p.status !== 'cancelado' && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        {p.status === 'pendente' && (
+                          <button onClick={() => onUpdateStatus(p.id, 'preparando')} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
+                            <Activity size={13} /> Iniciar Preparo
+                          </button>
+                        )}
+                        {p.status === 'preparando' && (
+                          <button onClick={() => onUpdateStatus(p.id, 'saiu_entrega')} className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
+                            <ArrowRight size={13} /> Marcar Saiu p/ Entrega
+                          </button>
+                        )}
+                        {p.status === 'saiu_entrega' && (
+                          <button onClick={() => onUpdateStatus(p.id, 'entregue')} className="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
+                            <CheckCircle2 size={13} /> Confirmar Entrega
+                          </button>
+                        )}
+                        {p.status !== 'cancelado' && (
+                          <button onClick={() => onUpdateStatus(p.id, 'cancelado')} className="bg-rose-800/50 hover:bg-rose-800 text-rose-200 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition ml-auto">
+                            <XCircle size={13} /> Cancelar Pedido
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1216,6 +1448,7 @@ interface DashboardViewProps {
 }
 
 function DashboardView({ loja, pedidos, onUpdateStatus }: DashboardViewProps) {
+  const [notifyToggle, setNotifyToggle] = useState(() => localStorage.getItem('delivery_whitelabel_notify_new') === 'true');
   const FILA_STATUS: Pedido['status'][] = ['pendente', 'preparando', 'saiu_entrega', 'entregue'];
 
   const pedidosLoja = pedidos.filter((p) => p.loja_id === loja.id);
@@ -1264,6 +1497,32 @@ function DashboardView({ loja, pedidos, onUpdateStatus }: DashboardViewProps) {
         <SummaryCard label="Entregues Hoje" value={entreguesHoje.length} color="text-green-400" bg="bg-green-950/20" icon={<CheckCircle2 size={18} />} dot="bg-green-400" />
         <SummaryCard label="Cancelados" value={cancelados.length} color="text-rose-400" bg="bg-rose-950/20" icon={<XCircle size={18} />} dot="bg-rose-400" />
         <SummaryCard label="Total" value={pedidosLoja.length} color="text-slate-100" bg="bg-slate-800/40" icon={<ShoppingBag size={18} />} dot="bg-slate-400" />
+      </div>
+
+      {/* Notification Toggle */}
+      <div className="flex items-center justify-end gap-3 px-1 -mt-2">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Notificar novos pedidos</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={notifyToggle}
+            onClick={() => {
+              const next = !notifyToggle;
+              setNotifyToggle(next);
+              localStorage.setItem('delivery_whitelabel_notify_new', String(next));
+            }}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+              notifyToggle ? 'bg-orange-500' : 'bg-slate-700'
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-all ${
+                notifyToggle ? 'ml-[1.125rem]' : 'ml-0.5'
+              }`}
+            />
+          </button>
+        </label>
       </div>
 
       {/* Active Orders */}

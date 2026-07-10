@@ -243,3 +243,20 @@ export function updatePedidoStatusLocal(
     return null;
   }
 }
+
+export function getCustomAtendentes(): Gerente[] {
+  try {
+    const raw = localStorage.getItem('delivery_whitelabel_atendentes');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomAtendente(atendente: Gerente): void {
+  const list = getCustomAtendentes();
+  const idx = list.findIndex((g) => g.id === atendente.id);
+  if (idx >= 0) list[idx] = atendente;
+  else list.push(atendente);
+  localStorage.setItem('delivery_whitelabel_atendentes', JSON.stringify(list));
+}
