@@ -473,6 +473,154 @@ export default function AdminPanel({
            currentLoja.nome.toLowerCase().includes('pizza') && k === 'restaurante'
   ) || 'distribuidora_bebidas';
 
+  const handleUpdateStatus = (pedidoId: string, novoStatus: Pedido['status']) => {
+    const updated = updatePedidoStatusLocal(pedidoId, novoStatus);
+    if (updated) {
+      setPedidos((prev) =>
+        prev.map((p) => (p.id === pedidoId ? { ...p, status: novoStatus } : p))
+      );
+    }
+  };
+
+  const renderPedidosTab = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+          <ShoppingBag size={15} className="text-orange-400" />
+        </div>
+        <div>
+          <h3 className="font-bold text-sm text-slate-100">Pedidos</h3>
+          <p className="text-[11px] text-slate-500">Pedidos processados pelo carrinho de compras</p>
+        </div>
+      </div>
+
+      {pedidos.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-slate-800/80 rounded-2xl bg-slate-900/20">
+          <div className="w-14 h-14 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-center mx-auto mb-3">
+            <ShoppingBag className="text-slate-500" size={28} />
+          </div>
+          <p className="text-slate-400 text-sm font-semibold">Nenhum pedido recebido</p>
+          <p className="text-slate-500 text-xs mt-1">Simule uma compra no cardápio mobile ao lado!</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {pedidos.map((p, idx) => renderPedidoCard(p, idx))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPedidoCard = (p: Pedido, idx: number) => (
+    <div key={p.id || idx} className="bg-slate-800/50 border border-slate-800/70 rounded-2xl overflow-hidden group hover:border-slate-700/60 transition-all">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 bg-slate-900/40 border-b border-slate-800/60">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="font-mono text-[11px] text-indigo-400/80 font-semibold truncate">{p.id}</span>
+          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border flex items-center gap-1 ${getStatusColor(p.status)}`}>
+            {p.status}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] text-slate-500 bg-slate-900/40 px-2 py-1 rounded-lg">
+            {p.criado_em ? new Date(p.criado_em).toLocaleTimeString('pt-BR') : 'Agora'}
+          </span>
+          <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded-lg ${p.dados_cliente.tipo_entrega === 'entrega' ? 'bg-blue-950/40 text-blue-300' : 'bg-violet-950/40 text-violet-300'}`}>
+            {p.dados_cliente.tipo_entrega === 'entrega' ? '🚚 Entrega' : '🏪 Retirada'}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="bg-slate-900/30 rounded-xl p-3">
+            <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1.5 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-slate-500" /> Cliente
+            </div>
+            <div className="text-slate-100 font-semibold">{p.dados_cliente.nome}</div>
+            <div className="text-slate-400 mt-0.5">{p.dados_cliente.telefone}</div>
+            {p.dados_cliente.tipo_entrega === 'entrega' && p.dados_cliente.endereco && (
+              <div className="text-slate-500 text-[10px] leading-snug mt-2 pt-2 border-t border-slate-800/40">
+                {p.dados_cliente.endereco.rua}, {p.dados_cliente.endereco.numero} - {p.dados_cliente.endereco.bairro}
+                {p.dados_cliente.endereco.complemento && ` (${p.dados_cliente.endereco.complemento})`}
+                <br />
+                {p.dados_cliente.endereco.cidade}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-slate-900/30 rounded-xl p-3">
+            <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1.5 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-slate-500" /> Pagamento
+            </div>
+            <div className="text-slate-200 capitalize">
+              <span className="text-slate-400">Forma:</span> <span className="font-semibold">{p.dados_cliente.forma_pagamento === 'pix' ? '💳 Pix' : '💵 Dinheiro'}</span>
+            </div>
+            {p.dados_cliente.troco_para && (
+              <div className="text-amber-400 text-[10px] mt-0.5">Troco para: R$ {p.dados_cliente.troco_para}</div>
+            )}
+            <div className="mt-3 pt-2 border-t border-slate-800/40 space-y-0.5">
+              <div className="flex justify-between text-slate-400">
+                <span>Subtotal</span>
+                <span className="text-slate-300">R$ {p.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Taxa Entrega</span>
+                <span className="text-slate-300">R$ {p.taxa_entrega.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-slate-800/40">
+                <span className="font-bold text-slate-300">Total</span>
+                <span className="font-black text-orange-400 tabular-nums">R$ {p.total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/30 rounded-xl p-3">
+          <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-2 flex items-center gap-1.5">
+            <span className="w-1 h-1 rounded-full bg-slate-500" /> Itens ({p.itens_pedido.length})
+          </div>
+          <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
+            {p.itens_pedido.map((it, itemIdx) => (
+              <div key={itemIdx} className="flex justify-between items-start text-[11px] text-slate-300 py-1 border-b border-slate-800/30 last:border-b-0">
+                <span>
+                  <strong className="text-orange-400 font-mono">{it.quantidade}x</strong> {it.nome}
+                  {it.observacoes && (
+                    <span className="block text-slate-600 italic font-sans pl-4 text-[10px]">Obs: "{it.observacoes}"</span>
+                  )}
+                </span>
+                <span className="font-semibold text-slate-200 tabular-nums shrink-0 ml-2">R$ {it.total_item.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {p.status !== 'entregue' && p.status !== 'cancelado' && (
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+            {p.status === 'pendente' && (
+              <button onClick={() => handleUpdateStatus(p.id, 'preparando')} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
+                <Activity size={13} /> Iniciar Preparo
+              </button>
+            )}
+            {p.status === 'preparando' && (
+              <button onClick={() => handleUpdateStatus(p.id, 'saiu_entrega')} className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
+                <ArrowRight size={13} /> Marcar Saiu p/ Entrega
+              </button>
+            )}
+            {p.status === 'saiu_entrega' && (
+              <button onClick={() => handleUpdateStatus(p.id, 'entregue')} className="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
+                <CheckCircle2 size={13} /> Confirmar Entrega
+              </button>
+            )}
+            {p.status !== 'cancelado' && (
+              <button onClick={() => handleUpdateStatus(p.id, 'cancelado')} className="bg-rose-800/50 hover:bg-rose-800 text-rose-200 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition ml-auto">
+                <XCircle size={13} /> Cancelar Pedido
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div id="admin-panel" className="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-6 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -671,14 +819,7 @@ export default function AdminPanel({
           <DashboardView
             loja={currentLoja}
             pedidos={pedidos}
-            onUpdateStatus={(pedidoId, novoStatus) => {
-              const updated = updatePedidoStatusLocal(pedidoId, novoStatus);
-              if (updated) {
-                setPedidos((prev) =>
-                  prev.map((p) => (p.id === pedidoId ? { ...p, status: novoStatus } : p))
-                );
-              }
-            }}
+            onUpdateStatus={handleUpdateStatus}
           />
         )}
 
@@ -1287,145 +1428,7 @@ export default function AdminPanel({
         )}
 
         {/* ==================== TAB CONTENT: PEDIDOS RECEBIDOS ==================== */}
-        {activeTab === 'pedidos' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
-                <ShoppingBag size={15} className="text-orange-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-slate-100">Pedidos</h3>
-                <p className="text-[11px] text-slate-500">Pedidos processados pelo carrinho de compras</p>
-              </div>
-            </div>
-
-            {pedidos.length === 0 ? (
-              <div className="text-center py-12 border border-dashed border-slate-800/80 rounded-2xl bg-slate-900/20">
-                <div className="w-14 h-14 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-center mx-auto mb-3">
-                  <ShoppingBag className="text-slate-500" size={28} />
-                </div>
-                <p className="text-slate-400 text-sm font-semibold">Nenhum pedido recebido</p>
-                <p className="text-slate-500 text-xs mt-1">Simule uma compra no cardápio mobile ao lado!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pedidos.map((p, idx) => (
-                  <div key={p.id || idx} className="bg-slate-800/50 border border-slate-800/70 rounded-2xl overflow-hidden group hover:border-slate-700/60 transition-all">
-                    <div className="flex items-center justify-between gap-3 px-4 py-3 bg-slate-900/40 border-b border-slate-800/60">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="font-mono text-[11px] text-indigo-400/80 font-semibold truncate">{p.id}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border flex items-center gap-1 ${getStatusColor(p.status)}`}>
-                          {p.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-slate-500 bg-slate-900/40 px-2 py-1 rounded-lg">
-                          {p.criado_em ? new Date(p.criado_em).toLocaleTimeString('pt-BR') : 'Agora'}
-                        </span>
-                        <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded-lg ${p.dados_cliente.tipo_entrega === 'entrega' ? 'bg-blue-950/40 text-blue-300' : 'bg-violet-950/40 text-violet-300'}`}>
-                          {p.dados_cliente.tipo_entrega === 'entrega' ? '🚚 Entrega' : '🏪 Retirada'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-4 space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                        {/* Cliente */}
-                        <div className="bg-slate-900/30 rounded-xl p-3">
-                          <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1.5 flex items-center gap-1.5">
-                            <span className="w-1 h-1 rounded-full bg-slate-500" /> Cliente
-                          </div>
-                          <div className="text-slate-100 font-semibold">{p.dados_cliente.nome}</div>
-                          <div className="text-slate-400 mt-0.5">{p.dados_cliente.telefone}</div>
-                          {p.dados_cliente.tipo_entrega === 'entrega' && p.dados_cliente.endereco && (
-                            <div className="text-slate-500 text-[10px] leading-snug mt-2 pt-2 border-t border-slate-800/40">
-                              {p.dados_cliente.endereco.rua}, {p.dados_cliente.endereco.numero} - {p.dados_cliente.endereco.bairro}
-                              {p.dados_cliente.endereco.complemento && ` (${p.dados_cliente.endereco.complemento})`}
-                              <br />
-                              {p.dados_cliente.endereco.cidade}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Pagamento e Totais */}
-                        <div className="bg-slate-900/30 rounded-xl p-3">
-                          <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1.5 flex items-center gap-1.5">
-                            <span className="w-1 h-1 rounded-full bg-slate-500" /> Pagamento
-                          </div>
-                          <div className="text-slate-200 capitalize">
-                            <span className="text-slate-400">Forma:</span> <span className="font-semibold">{p.dados_cliente.forma_pagamento === 'pix' ? '💳 Pix' : '💵 Dinheiro'}</span>
-                          </div>
-                          {p.dados_cliente.troco_para && (
-                            <div className="text-amber-400 text-[10px] mt-0.5">Troco para: R$ {p.dados_cliente.troco_para}</div>
-                          )}
-                          <div className="mt-3 pt-2 border-t border-slate-800/40 space-y-0.5">
-                            <div className="flex justify-between text-slate-400">
-                              <span>Subtotal</span>
-                              <span className="text-slate-300">R$ {p.subtotal.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-slate-400">
-                              <span>Taxa Entrega</span>
-                              <span className="text-slate-300">R$ {p.taxa_entrega.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between pt-1 border-t border-slate-800/40">
-                              <span className="font-bold text-slate-300">Total</span>
-                              <span className="font-black text-orange-400 tabular-nums">R$ {p.total.toFixed(2)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Itens */}
-                      <div className="bg-slate-900/30 rounded-xl p-3">
-                        <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-2 flex items-center gap-1.5">
-                          <span className="w-1 h-1 rounded-full bg-slate-500" /> Itens ({p.itens_pedido.length})
-                        </div>
-                        <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
-                          {p.itens_pedido.map((it, itemIdx) => (
-                            <div key={itemIdx} className="flex justify-between items-start text-[11px] text-slate-300 py-1 border-b border-slate-800/30 last:border-b-0">
-                              <span>
-                                <strong className="text-orange-400 font-mono">{it.quantidade}x</strong> {it.nome}
-                                {it.observacoes && (
-                                  <span className="block text-slate-600 italic font-sans pl-4 text-[10px]">Obs: "{it.observacoes}"</span>
-                                )}
-                              </span>
-                              <span className="font-semibold text-slate-200 tabular-nums shrink-0 ml-2">R$ {it.total_item.toFixed(2)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                    {/* Status Actions */}
-                    {p.status !== 'entregue' && p.status !== 'cancelado' && (
-                      <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                        {p.status === 'pendente' && (
-                          <button onClick={() => onUpdateStatus(p.id, 'preparando')} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
-                            <Activity size={13} /> Iniciar Preparo
-                          </button>
-                        )}
-                        {p.status === 'preparando' && (
-                          <button onClick={() => onUpdateStatus(p.id, 'saiu_entrega')} className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
-                            <ArrowRight size={13} /> Marcar Saiu p/ Entrega
-                          </button>
-                        )}
-                        {p.status === 'saiu_entrega' && (
-                          <button onClick={() => onUpdateStatus(p.id, 'entregue')} className="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition">
-                            <CheckCircle2 size={13} /> Confirmar Entrega
-                          </button>
-                        )}
-                        {p.status !== 'cancelado' && (
-                          <button onClick={() => onUpdateStatus(p.id, 'cancelado')} className="bg-rose-800/50 hover:bg-rose-800 text-rose-200 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition ml-auto">
-                            <XCircle size={13} /> Cancelar Pedido
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {activeTab === 'pedidos' && renderPedidosTab()}
 
         {/* ==================== TAB CONTENT: SQL SCRIPT ==================== */}
         {activeTab === 'sql' && (
