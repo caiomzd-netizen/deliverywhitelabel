@@ -480,7 +480,7 @@ export default function AdminPanel({
             <div className="flex flex-col items-center gap-1.5">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">QR Code do Cardápio</span>
               <QRCodeDisplay
-                url={`${window.location.origin}${window.location.pathname.replace(/\/+$/, '')}/#/${currentLoja.slug_url}`}
+                url={`${window.location.origin}/#/${currentLoja.slug_url}`}
                 size={130}
                 label="Compartilhe com seus clientes!"
               />

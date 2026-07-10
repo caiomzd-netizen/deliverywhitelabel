@@ -52,6 +52,8 @@ export default function App() {
     const p = window.location.pathname.replace(/\/+$/, '');
     if (p && p !== '') {
       window.location.hash = `#${p}`;
+      const r = parseHash();
+      setRoute(r);
     }
   }, []);
 
@@ -270,7 +272,7 @@ export default function App() {
               <a href={`#/${currentLoja.slug_url}/admin`} className="text-[10px] font-mono text-blue-400 truncate max-w-[120px]">/{currentLoja.slug_url}/admin</a>
             </div>
             <QRCodeDisplay
-              url={`${window.location.origin}${window.location.pathname.replace(/\/+$/, '')}/#/${currentLoja.slug_url}`}
+              url={`${window.location.origin}/#/${currentLoja.slug_url}`}
               size={80}
             />
             <button onClick={handleLogout} className="text-[10px] text-rose-400 hover:text-rose-300 font-bold cursor-pointer">Sair</button>
