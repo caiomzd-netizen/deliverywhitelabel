@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Database } from 'lucide-react';
-import { fetchProdutosByLoja, fetchAllLojas } from './supabase';
-import { Loja, Produto, CartItem, Gerente } from './types';
+import { fetchProdutosByLoja, fetchAllLojas, getClienteSession, setClienteSession, clearClienteSession, updateClienteEndereco } from './supabase';
+import { Loja, Produto, CartItem, Gerente, Cliente, ClienteEndereco } from './types';
 import StoreMenu from './components/StoreMenu';
 import CartDrawer from './components/CartDrawer';
 import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
 import PWAPrompt from './components/PWAPrompt';
 import QRCodeDisplay from './components/QRCodeDisplay';
+import ClienteAuth from './components/ClienteAuth';
 import { updatePWAManifest } from './pwa';
 
 function parseHash(): { slug: string | null; isAdmin: boolean } {
@@ -32,6 +33,23 @@ export default function App() {
       return null;
     }
   });
+
+  const [cliente, setCliente] = useState<Cliente | null>(null);
+
+  // Carregar sessão do cliente vinculado à loja atual
+  useEffect(() => {
+    if (!currentLoja) return;
+    const session = getClienteSession();
+    if (session && session.loja_id === currentLoja.id) {
+      const lista = JSON.parse(localStorage.getItem('delivery_whitelabel_clientes') || '[]');
+      const found = lista.find((c: Cliente) => c.loja_id === session.loja_id && c.email === session.email);
+      if (found) {
+        setCliente(found);
+        return;
+      }
+    }
+    setCliente(null);
+  }, [currentLoja]);
 
   const [masterAdminLoggedIn, setMasterAdminLoggedIn] = useState(false);
 
@@ -181,6 +199,23 @@ export default function App() {
     window.location.hash = '#/';
   };
 
+  const handleClienteAuth = (c: Cliente) => {
+    setCliente(c);
+    setClienteSession({ loja_id: c.loja_id, email: c.email });
+  };
+
+  const handleClienteLogout = () => {
+    setCliente(null);
+    clearClienteSession();
+  };
+
+  const handleClienteEnderecoChange = (endereco: ClienteEndereco) => {
+    if (!cliente) return;
+    const atualizado = { ...cliente, endereco };
+    setCliente(atualizado);
+    updateClienteEndereco(cliente.id, endereco);
+  };
+
   const toastEl = toast && (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-bounce">
       <div className={`px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border text-sm font-semibold ${
@@ -320,6 +355,9 @@ export default function App() {
             loja={currentLoja}
             produtos={produtos}
             cart={cart}
+            cliente={cliente}
+            onClienteAuth={handleClienteAuth}
+            onClienteLogout={handleClienteLogout}
             onAddToCart={handleAddToCart}
             onOpenCart={() => setIsCartOpen(true)}
           />
@@ -328,6 +366,8 @@ export default function App() {
           <CartDrawer
             loja={currentLoja}
             cartItems={cart}
+            cliente={cliente}
+            onClienteEnderecoChange={handleClienteEnderecoChange}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
             onClearCart={handleClearCart}
@@ -401,6 +441,9 @@ export default function App() {
                 loja={currentLoja}
                 produtos={produtos}
                 cart={cart}
+                cliente={cliente}
+                onClienteAuth={handleClienteAuth}
+                onClienteLogout={handleClienteLogout}
                 onAddToCart={handleAddToCart}
                 onOpenCart={() => setIsCartOpen(true)}
               />
@@ -409,6 +452,8 @@ export default function App() {
               <CartDrawer
                 loja={currentLoja}
                 cartItems={cart}
+                cliente={cliente}
+                onClienteEnderecoChange={handleClienteEnderecoChange}
                 onUpdateQuantity={handleUpdateQuantity}
                 onRemoveItem={handleRemoveItem}
                 onClearCart={handleClearCart}

@@ -1,4 +1,42 @@
-import { Loja, Produto } from './types';
+import { Loja, Produto, HorarioFuncionamento } from './types';
+
+export const DEFAULT_HORARIO: HorarioFuncionamento = {
+  seg: { aberto: true, inicio: '08:00', fim: '22:00' },
+  ter: { aberto: true, inicio: '08:00', fim: '22:00' },
+  qua: { aberto: true, inicio: '08:00', fim: '22:00' },
+  qui: { aberto: true, inicio: '08:00', fim: '22:00' },
+  sex: { aberto: true, inicio: '08:00', fim: '23:00' },
+  sab: { aberto: true, inicio: '09:00', fim: '23:00' },
+  dom: { aberto: false, inicio: '12:00', fim: '18:00' },
+};
+
+const DIA_MAP: Record<number, keyof HorarioFuncionamento> = {
+  0: 'dom',
+  1: 'seg',
+  2: 'ter',
+  3: 'qua',
+  4: 'qui',
+  5: 'sex',
+  6: 'sab',
+};
+
+export function getHorarioHoje(loja: Loja) {
+  const horario = loja.horario_funcionamento || DEFAULT_HORARIO;
+  const dia = DIA_MAP[new Date().getDay()];
+  return horario[dia];
+}
+
+export function isLojaAberta(loja: Loja): boolean {
+  const hoje = getHorarioHoje(loja);
+  if (!hoje.aberto) return false;
+  const agora = new Date();
+  const [hA, mA] = hoje.inicio.split(':').map(Number);
+  const [hF, mF] = hoje.fim.split(':').map(Number);
+  const minAgora = agora.getHours() * 60 + agora.getMinutes();
+  const minInicio = hA * 60 + mA;
+  const minFim = hF * 60 + mF;
+  return minAgora >= minInicio && minAgora <= minFim;
+}
 
 export const DEMO_LOJAS: Loja[] = [
   {

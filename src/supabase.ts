@@ -1,6 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
-import { Loja, Produto, Pedido, Gerente } from './types';
+import { Loja, Produto, Pedido, Gerente, Cliente } from './types';
 import { DEMO_LOJAS, DEMO_PRODUTOS } from './data';
+
+// Simple non-cryptographic hash for localStorage password obfuscation.
+// NOTE: This is NOT secure — it only avoids storing plaintext in the browser.
+// For real security, use a backend with bcrypt/argon2.
+function hashSenha(senha: string): string {
+  let h = 5381;
+  for (let i = 0; i < senha.length; i++) {
+    h = (h * 33) ^ senha.charCodeAt(i);
+  }
+  return (h >>> 0).toString(16);
+}
 
 const metaEnv = (import.meta as any).env || {};
 const supabaseUrl = metaEnv.VITE_SUPABASE_URL || '';
@@ -259,4 +270,98 @@ export function saveCustomAtendente(atendente: Gerente): void {
   if (idx >= 0) list[idx] = atendente;
   else list.push(atendente);
   localStorage.setItem('delivery_whitelabel_atendentes', JSON.stringify(list));
+}
+
+// ============================================================================
+// CLIENTES (cadastro vinculado à loja, persistência local)
+// ============================================================================
+
+const CLIENTES_KEY = 'delivery_whitelabel_clientes';
+
+export function getClientes(lojaId: string): Cliente[] {
+  try {
+    const raw = localStorage.getItem(CLIENTES_KEY);
+    const all: Cliente[] = raw ? JSON.parse(raw) : [];
+    return all.filter((c) => c.loja_id === lojaId);
+  } catch {
+    return [];
+  }
+}
+
+export function getClienteByEmail(lojaId: string, email: string): Cliente | null {
+  const clientes = getClientes(lojaId);
+  return clientes.find((c) => c.email.toLowerCase() === email.toLowerCase()) || null;
+}
+
+export function saveCliente(cliente: Cliente): void {
+  try {
+    const raw = localStorage.getItem(CLIENTES_KEY);
+    const all: Cliente[] = raw ? JSON.parse(raw) : [];
+    const idx = all.findIndex((c) => c.id === cliente.id);
+    if (idx >= 0) all[idx] = cliente;
+    else all.push(cliente);
+    localStorage.setItem(CLIENTES_KEY, JSON.stringify(all));
+  } catch (err) {
+    console.error('Erro ao salvar cliente:', err);
+  }
+}
+
+export function authenticateCliente(lojaId: string, email: string, senha: string): Cliente | null {
+  const cliente = getClienteByEmail(lojaId, email);
+  if (!cliente) return null;
+  if (cliente.senha_hash !== hashSenha(senha)) return null;
+  return cliente;
+}
+
+export interface NovoClienteInput {
+  loja_id: string;
+  nome: string;
+  email: string;
+  telefone: string;
+  senha: string;
+  endereco?: Cliente['endereco'];
+}
+
+export function registerCliente(input: NovoClienteInput): Cliente {
+  const cliente: Cliente = {
+    id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    loja_id: input.loja_id,
+    nome: input.nome,
+    email: input.email,
+    telefone: input.telefone,
+    endereco: input.endereco,
+    senha_hash: hashSenha(input.senha),
+    criado_em: new Date().toISOString(),
+  };
+  saveCliente(cliente);
+  return cliente;
+}
+
+export function updateClienteEndereco(clienteId: string, endereco: Cliente['endereco']) {
+  const raw = localStorage.getItem(CLIENTES_KEY);
+  const all: Cliente[] = raw ? JSON.parse(raw) : [];
+  const idx = all.findIndex((c) => c.id === clienteId);
+  if (idx >= 0) {
+    all[idx] = { ...all[idx], endereco };
+    localStorage.setItem(CLIENTES_KEY, JSON.stringify(all));
+  }
+}
+
+const CLIENTE_SESSION_KEY = 'delivery_whitelabel_cliente_session';
+
+export function getClienteSession(): { loja_id: string; email: string } | null {
+  try {
+    const raw = localStorage.getItem(CLIENTE_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setClienteSession(session: { loja_id: string; email: string }) {
+  localStorage.setItem(CLIENTE_SESSION_KEY, JSON.stringify(session));
+}
+
+export function clearClienteSession() {
+  localStorage.removeItem(CLIENTE_SESSION_KEY);
 }

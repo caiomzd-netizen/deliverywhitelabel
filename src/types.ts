@@ -13,6 +13,45 @@ export interface Loja {
   ativo: boolean;
   niche?: string;
   pwa_icon_url?: string;
+  horario_funcionamento?: HorarioFuncionamento;
+}
+
+export interface HorarioDia {
+  aberto: boolean;
+  inicio: string; // "HH:MM"
+  fim: string;     // "HH:MM"
+}
+
+export interface HorarioFuncionamento {
+  seg: HorarioDia;
+  ter: HorarioDia;
+  qua: HorarioDia;
+  qui: HorarioDia;
+  sex: HorarioDia;
+  sab: HorarioDia;
+  dom: HorarioDia;
+}
+
+export interface ClienteEndereco {
+  rua: string;
+  numero: string;
+  bairro: string;
+  complemento?: string;
+  cidade: string;
+  lat?: number;
+  lng?: number;
+  precisao?: number; // accuracy em metros
+}
+
+export interface Cliente {
+  id: string;
+  loja_id: string;
+  nome: string;
+  email: string;
+  senha_hash: string;
+  telefone: string;
+  endereco?: ClienteEndereco;
+  criado_em: string;
 }
 
 export interface Produto {

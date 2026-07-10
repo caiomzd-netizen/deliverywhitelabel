@@ -7,14 +7,14 @@ import {
   ArrowRight, XCircle, Package
 } from 'lucide-react';
 import QRCodeDisplay from './QRCodeDisplay';
-import { SQL_SCHEMA_SCRIPT, DEMO_PRODUTOS } from '../data';
-import { 
-  isSupabaseConfigured, fetchPedidosLocais, getCustomLojas, 
+import { SQL_SCHEMA_SCRIPT, DEMO_PRODUTOS, DEFAULT_HORARIO } from '../data';
+import {
+  isSupabaseConfigured, fetchPedidosLocais, getCustomLojas,
   saveCustomLoja, getCustomProdutos, saveCustomProduto, deleteCustomProduto,
   getCustomGerentes, saveCustomGerente, updatePedidoStatusLocal,
   getCustomAtendentes, saveCustomAtendente
 } from '../supabase';
-import { Pedido, Loja, Produto, Gerente } from '../types';
+import { Pedido, Loja, Produto, Gerente, HorarioFuncionamento, HorarioDia } from '../types';
 
 interface AdminPanelProps {
   currentLoja: Loja;
@@ -74,6 +74,7 @@ export default function AdminPanel({
   const [storeFormCor, setStoreFormCor] = useState('#f97316');
   const [storeFormNiche, setStoreFormNiche] = useState('hamburgueria');
   const [storeFormPwaIcon, setStoreFormPwaIcon] = useState('');
+  const [storeFormHorario, setStoreFormHorario] = useState<HorarioFuncionamento>(DEFAULT_HORARIO);
 
   // --- Form States for Products ---
   const [editingProduto, setEditingProduto] = useState<Produto | null>(null);
@@ -1121,6 +1122,7 @@ export default function AdminPanel({
                                 setStoreFormCor(loja.cor_tema);
                                 setStoreFormNiche(loja.niche || 'hamburgueria');
                                 setStoreFormPwaIcon(loja.pwa_icon_url || '');
+                                setStoreFormHorario(loja.horario_funcionamento || DEFAULT_HORARIO);
                               }}
                               className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg transition cursor-pointer border border-slate-700/50"
                             >
@@ -1210,6 +1212,65 @@ export default function AdminPanel({
                             </div>
                           </div>
 
+                          {/* Horário de Funcionamento */}
+                          <div className="pt-2 border-t border-slate-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <label className="block text-[11px] font-bold text-slate-400 uppercase">Horário de Funcionamento</label>
+                              <button
+                                type="button"
+                                onClick={() => setStoreFormHorario(DEFAULT_HORARIO)}
+                                className="text-[10px] text-slate-500 hover:text-orange-300 font-bold transition"
+                              >
+                                Restaurar Padrão
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {(['seg','ter','qua','qui','sex','sab','dom'] as (keyof HorarioFuncionamento)[]).map((dia) => {
+                                const cfg = storeFormHorario[dia];
+                                const labelMap: Record<string, string> = {
+                                  seg: 'Segunda', ter: 'Terça', qua: 'Quarta', qui: 'Quinta',
+                                  sex: 'Sexta', sab: 'Sábado', dom: 'Domingo',
+                                };
+                                const updateDia = (patch: Partial<HorarioDia>) => {
+                                  setStoreFormHorario((prev) => ({
+                                    ...prev,
+                                    [dia]: { ...prev[dia], ...patch },
+                                  }));
+                                };
+                                return (
+                                  <div key={dia} className="flex items-center gap-3 bg-slate-950/40 rounded-xl px-3 py-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateDia({ aberto: !cfg.aberto })}
+                                      className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors shrink-0 ${cfg.aberto ? 'bg-orange-500' : 'bg-slate-700'}`}
+                                    >
+                                      <span className={`inline-block h-3 w-3 rounded-full bg-white transition-all ${cfg.aberto ? 'ml-3.5' : 'ml-0.5'}`} />
+                                    </button>
+                                    <span className="text-[11px] font-bold text-slate-300 w-16 shrink-0 capitalize">{labelMap[dia]}</span>
+                                    <input
+                                      type="time"
+                                      disabled={!cfg.aberto}
+                                      value={cfg.inicio}
+                                      onChange={(e) => updateDia({ inicio: e.target.value })}
+                                      className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-200 disabled:opacity-40 disabled:text-slate-600"
+                                    />
+                                    <span className="text-slate-600 text-[10px]">às</span>
+                                    <input
+                                      type="time"
+                                      disabled={!cfg.aberto}
+                                      value={cfg.fim}
+                                      onChange={(e) => updateDia({ fim: e.target.value })}
+                                      className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-200 disabled:opacity-40 disabled:text-slate-600"
+                                    />
+                                    <span className={`ml-auto text-[10px] font-bold ${cfg.aberto ? 'text-green-400' : 'text-rose-400'}`}>
+                                      {cfg.aberto ? 'Aberto' : 'Fechado'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
                           {storeGerente && (
                             <div className="pt-3 border-t border-slate-800 text-xs text-slate-400">
                               Gerente vinculado: <span className="text-orange-300 font-semibold">{storeGerente.nome}</span> — <span className="text-slate-400">{storeGerente.email}</span>
@@ -1240,6 +1301,7 @@ export default function AdminPanel({
                                   cor_tema: storeFormCor,
                                   niche: storeFormNiche,
                                   pwa_icon_url: storeFormPwaIcon || undefined,
+                                  horario_funcionamento: storeFormHorario,
                                 };
                                 saveCustomLoja(updated);
                                 onRefreshLojas();

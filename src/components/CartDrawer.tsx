@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, Trash2, MapPin, Store, CreditCard, DollarSign, Send, MessageSquare, AlertCircle } from 'lucide-react';
-import { CartItem, Pedido, Loja } from '../types';
+import { CartItem, Pedido, Loja, Cliente, ClienteEndereco } from '../types';
 import { savePedido } from '../supabase';
 
 interface CartDrawerProps {
   loja: Loja;
   cartItems: CartItem[];
+  cliente?: Cliente | null;
+  onClienteEnderecoChange?: (endereco: ClienteEndereco) => void;
   onUpdateQuantity: (productId: string, delta: number) => void;
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
@@ -16,6 +18,8 @@ interface CartDrawerProps {
 export default function CartDrawer({
   loja,
   cartItems,
+  cliente,
+  onClienteEnderecoChange,
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
@@ -23,16 +27,16 @@ export default function CartDrawer({
   onOrderCompleted
 }: CartDrawerProps) {
   // Form States
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [nome, setNome] = useState(cliente?.nome || '');
+  const [telefone, setTelefone] = useState(cliente?.telefone || '');
   const [tipoEntrega, setTipoEntrega] = useState<'entrega' | 'retirada'>('entrega');
   
   // Address States
-  const [rua, setRua] = useState('');
-  const [numero, setNumero] = useState('');
-  const [bairro, setBairro] = useState('');
-  const [complemento, setComplemento] = useState('');
-  const [cidade, setCidade] = useState('São Paulo, SP');
+  const [rua, setRua] = useState(cliente?.endereco?.rua || '');
+  const [numero, setNumero] = useState(cliente?.endereco?.numero || '');
+  const [bairro, setBairro] = useState(cliente?.endereco?.bairro || '');
+  const [complemento, setComplemento] = useState(cliente?.endereco?.complemento || '');
+  const [cidade, setCidade] = useState(cliente?.endereco?.cidade || 'São Paulo, SP');
 
   // Payment States
   const [formaPagamento, setFormaPagamento] = useState<'pix' | 'dinheiro'>('pix');
@@ -41,6 +45,21 @@ export default function CartDrawer({
   // Status State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pré-chegar o formulário com os dados do cliente logado (quando o carrinho abre)
+  useEffect(() => {
+    if (!cliente) return;
+    if (!nome.trim()) setNome(cliente.nome);
+    if (!telefone.trim()) setTelefone(cliente.telefone);
+    if (cliente.endereco) {
+      if (!rua.trim()) setRua(cliente.endereco.rua);
+      if (!numero.trim()) setNumero(cliente.endereco.numero);
+      if (!bairro.trim()) setBairro(cliente.endereco.bairro);
+      if (!complemento.trim() && cliente.endereco.complemento) setComplemento(cliente.endereco.complemento);
+      if (!cidade.trim()) setCidade(cliente.endereco.cidade);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cliente]);
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.produto.preco * item.quantidade, 0);
   const taxaEntrega = tipoEntrega === 'entrega' ? loja.taxa_entrega : 0;
@@ -95,6 +114,20 @@ export default function CartDrawer({
       total,
       status: 'pendente'
     };
+
+    // Salvar ajustes de endereço no cliente logado (mantém lat/lng da geolocalização)
+    if (cliente && tipoEntrega === 'entrega' && onClienteEnderecoChange) {
+      onClienteEnderecoChange({
+        rua,
+        numero,
+        bairro,
+        complemento: complemento || undefined,
+        cidade,
+        ...(cliente.endereco?.lat !== undefined && cliente.endereco?.lng !== undefined
+          ? { lat: cliente.endereco.lat, lng: cliente.endereco.lng, precisao: cliente.endereco.precisao }
+          : {}),
+      });
+    }
 
     const res = await savePedido(pedido);
 
