@@ -478,20 +478,26 @@ export default function AdminPanel({
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header Superior */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-orange-500 text-white font-extrabold text-sm">
-                PORTAL PARCEIRO
-              </span>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight">Painel de Gestão Whitelabel</h1>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/80 via-slate-800/40 to-slate-900/80 border border-slate-700/60 p-5 md:p-6">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-orange-500/5 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full blur-[80px] pointer-events-none" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between relative">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-extrabold text-xs tracking-widest shadow-lg shadow-orange-500/20">
+                  PORTAL PARCEIRO
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium">Whitelabel SaaS</span>
+              </div>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-100">
+                Painel de Gestão <span className="bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">Whitelabel</span>
+              </h1>
+              <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                Gerencie lojas, usuários, cardápios e acompanhe pedidos em tempo real.
+              </p>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Gerencie lojas, usuários de distribuidoras/restaurantes, cadastre produtos e monitore pedidos em tempo real.
-            </p>
-          </div>
-          
-          <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-3">
+            
+            <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-3">
 
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
               isSupabaseConfigured 
@@ -503,53 +509,56 @@ export default function AdminPanel({
             </span>
           </div>
         </div>
+        </div>
 
         {/* QR Code + URLs da Loja Ativa */}
         {currentLoja && (
-          <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 flex flex-col md:flex-row items-center gap-6">
-            <div className="flex flex-col items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">QR Code do Cardápio</span>
-              <QRCodeDisplay
-                url={`${window.location.origin}/#/${currentLoja.slug_url}`}
-                size={130}
-                label="Compartilhe com seus clientes!"
-              />
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/40 to-slate-800/10 border border-slate-700/60 p-5 md:p-6 flex flex-col md:flex-row items-center gap-6">
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-500/5 rounded-full blur-[80px] pointer-events-none" />
+            <div className="flex flex-col items-center gap-2 relative">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">QR Code</span>
+              <div className="bg-white rounded-2xl p-2 shadow-xl shadow-black/20">
+                <QRCodeDisplay
+                  url={`${window.location.origin}/#/${currentLoja.slug_url}`}
+                  size={110}
+                  label="Compartilhe com seus clientes!"
+                />
+              </div>
             </div>
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-3 relative">
               <div>
-                <h4 className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
-                  <Smartphone size={14} className="text-orange-400" />
+                <h4 className="font-bold text-slate-100 text-sm flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+                    <Smartphone size={14} className="text-orange-400" />
+                  </div>
                   {currentLoja.nome}
                 </h4>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  Links de acesso para sua loja:
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Links de acesso direto:
                 </p>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-700/60">
-                  <span className="text-[10px] font-bold text-orange-400 uppercase w-16 shrink-0">Cliente:</span>
+                <div className="flex items-center gap-3 bg-slate-950/70 px-4 py-2.5 rounded-xl border border-slate-700/50 group hover:border-slate-600/60 transition-colors">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider w-14 shrink-0">Cliente</span>
                   <a
                     href={`#/${currentLoja.slug_url}`}
-                    className="text-xs font-mono text-orange-300 hover:text-orange-200 truncate"
+                    className="text-xs font-mono text-orange-300 hover:text-orange-200 truncate flex-1"
                   >
                     /{currentLoja.slug_url}
                   </a>
-                  <ExternalLink size={12} className="text-slate-500 shrink-0" />
+                  <ExternalLink size={12} className="text-slate-600 group-hover:text-slate-400 transition shrink-0" />
                 </div>
-                <div className="flex items-center gap-2 bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-700/60">
-                  <span className="text-[10px] font-bold text-blue-400 uppercase w-16 shrink-0">Admin:</span>
+                <div className="flex items-center gap-3 bg-slate-950/70 px-4 py-2.5 rounded-xl border border-slate-700/50 group hover:border-slate-600/60 transition-colors">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider w-14 shrink-0">Admin</span>
                   <a
                     href={`#/${currentLoja.slug_url}/admin`}
-                    className="text-xs font-mono text-blue-300 hover:text-blue-200 truncate"
+                    className="text-xs font-mono text-blue-300 hover:text-blue-200 truncate flex-1"
                   >
                     /{currentLoja.slug_url}/admin
                   </a>
-                  <ExternalLink size={12} className="text-slate-500 shrink-0" />
+                  <ExternalLink size={12} className="text-slate-600 group-hover:text-slate-400 transition shrink-0" />
                 </div>
               </div>
-              <p className="text-[10px] text-slate-500 leading-relaxed">
-                Clientes escaneiam o QR Code, abrem o link e podem instalar o PWA no celular — sempre acessando diretamente o cardápio da sua loja.
-              </p>
             </div>
           </div>
         )}
@@ -583,14 +592,14 @@ export default function AdminPanel({
         </div>}
 
         {/* Tabs de Navegação */}
-        <div className="flex overflow-x-auto border-b border-slate-800 gap-2 scrollbar-none pb-0.5">
+        <div className="flex overflow-x-auto border-b border-slate-800/60 gap-1 scrollbar-none pb-0.5 bg-slate-800/10 rounded-t-xl px-1 pt-1">
           <button
             id="tab-dashboard"
             onClick={() => { setActiveTab('dashboard'); handleResetProductForm(); }}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'dashboard'
-                ? 'border-orange-500 text-orange-400 bg-orange-950/20'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'bg-slate-800 text-orange-400 shadow-sm shadow-black/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
             <LayoutDashboard size={16} />
@@ -600,10 +609,10 @@ export default function AdminPanel({
           <button
             id="tab-lojas"
             onClick={() => { setActiveTab('lojas'); handleResetProductForm(); }}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'lojas'
-                ? 'border-orange-500 text-orange-400 bg-orange-950/20'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'bg-slate-800 text-orange-400 shadow-sm shadow-black/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
             <ToggleLeft size={16} />
@@ -613,29 +622,29 @@ export default function AdminPanel({
           <button
             id="tab-produtos"
             onClick={() => setActiveTab('produtos')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'produtos'
-                ? 'border-orange-500 text-orange-400 bg-orange-950/20'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'bg-slate-800 text-orange-400 shadow-sm shadow-black/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
             <Plus size={16} />
-            Gerenciar Cardápio & Produtos
+            Cardápio & Produtos
           </button>
 
           <button
             id="tab-pedidos"
             onClick={() => { setActiveTab('pedidos'); handleResetProductForm(); }}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all relative whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all relative whitespace-nowrap ${
               activeTab === 'pedidos'
-                ? 'border-orange-500 text-orange-400 bg-orange-950/20'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'bg-slate-800 text-orange-400 shadow-sm shadow-black/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
             <ShoppingBag size={16} />
-            Pedidos do Carrinho
+            Pedidos
             {pedidos.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+              <span className="bg-orange-500 text-white text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold px-1">
                 {pedidos.length}
               </span>
             )}
@@ -645,14 +654,14 @@ export default function AdminPanel({
             <button
               id="tab-sql"
               onClick={() => { setActiveTab('sql'); handleResetProductForm(); }}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
                 activeTab === 'sql'
-                  ? 'border-orange-500 text-orange-400 bg-orange-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                  ? 'bg-slate-800 text-orange-400 shadow-sm shadow-black/10'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
               }`}
             >
               <FileText size={16} />
-              Código SQL Supabase
+              SQL
             </button>
           )}
         </div>
@@ -1280,93 +1289,111 @@ export default function AdminPanel({
         {/* ==================== TAB CONTENT: PEDIDOS RECEBIDOS ==================== */}
         {activeTab === 'pedidos' && (
           <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-slate-200">Pedidos Emulados / Salvos</h3>
-              <p className="text-xs text-slate-400">Veja em tempo real os pedidos que foram processados pelo fluxo do carrinho de compras.</p>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+                <ShoppingBag size={15} className="text-orange-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-100">Pedidos</h3>
+                <p className="text-[11px] text-slate-500">Pedidos processados pelo carrinho de compras</p>
+              </div>
             </div>
 
             {pedidos.length === 0 ? (
-              <div className="text-center py-12 border border-dashed border-slate-800 rounded-xl bg-slate-900/30">
-                <ShoppingBag className="mx-auto text-slate-600 mb-3" size={36} />
-                <p className="text-slate-400 text-sm">Nenhum pedido recebido ainda nesta sessão.</p>
+              <div className="text-center py-12 border border-dashed border-slate-800/80 rounded-2xl bg-slate-900/20">
+                <div className="w-14 h-14 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-center mx-auto mb-3">
+                  <ShoppingBag className="text-slate-500" size={28} />
+                </div>
+                <p className="text-slate-400 text-sm font-semibold">Nenhum pedido recebido</p>
                 <p className="text-slate-500 text-xs mt-1">Simule uma compra no cardápio mobile ao lado!</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {pedidos.map((p, idx) => (
-                  <div key={p.id || idx} className="bg-slate-800/50 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
-                      <div>
-                        <span className="font-mono text-xs text-indigo-400 font-semibold">{p.id}</span>
-                        <div className="text-slate-400 text-[10px] mt-0.5">
-                          {p.criado_em ? new Date(p.criado_em).toLocaleTimeString('pt-BR') : 'Agora mesmo'}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${getStatusColor(p.status)}`}>
+                  <div key={p.id || idx} className="bg-slate-800/50 border border-slate-800/70 rounded-2xl overflow-hidden group hover:border-slate-700/60 transition-all">
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 bg-slate-900/40 border-b border-slate-800/60">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-mono text-[11px] text-indigo-400/80 font-semibold truncate">{p.id}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border flex items-center gap-1 ${getStatusColor(p.status)}`}>
                           {p.status}
                         </span>
-                        <span className="text-xs bg-slate-700/80 px-2 py-0.5 rounded text-slate-200">
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] text-slate-500 bg-slate-900/40 px-2 py-1 rounded-lg">
+                          {p.criado_em ? new Date(p.criado_em).toLocaleTimeString('pt-BR') : 'Agora'}
+                        </span>
+                        <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded-lg ${p.dados_cliente.tipo_entrega === 'entrega' ? 'bg-blue-950/40 text-blue-300' : 'bg-violet-950/40 text-violet-300'}`}>
                           {p.dados_cliente.tipo_entrega === 'entrega' ? '🚚 Entrega' : '🏪 Retirada'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                      {/* Cliente */}
-                      <div className="space-y-1">
-                        <div className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Cliente</div>
-                        <div className="text-slate-200 font-semibold">{p.dados_cliente.nome}</div>
-                        <div className="text-slate-300">{p.dados_cliente.telefone}</div>
-                        {p.dados_cliente.tipo_entrega === 'entrega' && p.dados_cliente.endereco && (
-                          <div className="text-slate-400 text-[11px] leading-snug mt-1">
-                            {p.dados_cliente.endereco.rua}, {p.dados_cliente.endereco.numero} - {p.dados_cliente.endereco.bairro}
-                            {p.dados_cliente.endereco.complemento && ` (${p.dados_cliente.endereco.complemento})`}
-                            <br />
-                            {p.dados_cliente.endereco.cidade}
+                    <div className="p-4 space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        {/* Cliente */}
+                        <div className="bg-slate-900/30 rounded-xl p-3">
+                          <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1.5 flex items-center gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-slate-500" /> Cliente
                           </div>
-                        )}
+                          <div className="text-slate-100 font-semibold">{p.dados_cliente.nome}</div>
+                          <div className="text-slate-400 mt-0.5">{p.dados_cliente.telefone}</div>
+                          {p.dados_cliente.tipo_entrega === 'entrega' && p.dados_cliente.endereco && (
+                            <div className="text-slate-500 text-[10px] leading-snug mt-2 pt-2 border-t border-slate-800/40">
+                              {p.dados_cliente.endereco.rua}, {p.dados_cliente.endereco.numero} - {p.dados_cliente.endereco.bairro}
+                              {p.dados_cliente.endereco.complemento && ` (${p.dados_cliente.endereco.complemento})`}
+                              <br />
+                              {p.dados_cliente.endereco.cidade}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Pagamento e Totais */}
+                        <div className="bg-slate-900/30 rounded-xl p-3">
+                          <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1.5 flex items-center gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-slate-500" /> Pagamento
+                          </div>
+                          <div className="text-slate-200 capitalize">
+                            <span className="text-slate-400">Forma:</span> <span className="font-semibold">{p.dados_cliente.forma_pagamento === 'pix' ? '💳 Pix' : '💵 Dinheiro'}</span>
+                          </div>
+                          {p.dados_cliente.troco_para && (
+                            <div className="text-amber-400 text-[10px] mt-0.5">Troco para: R$ {p.dados_cliente.troco_para}</div>
+                          )}
+                          <div className="mt-3 pt-2 border-t border-slate-800/40 space-y-0.5">
+                            <div className="flex justify-between text-slate-400">
+                              <span>Subtotal</span>
+                              <span className="text-slate-300">R$ {p.subtotal.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-slate-400">
+                              <span>Taxa Entrega</span>
+                              <span className="text-slate-300">R$ {p.taxa_entrega.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between pt-1 border-t border-slate-800/40">
+                              <span className="font-bold text-slate-300">Total</span>
+                              <span className="font-black text-orange-400 tabular-nums">R$ {p.total.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Pagamento e Totais */}
-                      <div className="space-y-1 sm:text-right">
-                        <div className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Pagamento & Total</div>
-                        <div className="text-slate-200 font-medium capitalize">
-                          Forma: <span className="font-semibold text-slate-100">{p.dados_cliente.forma_pagamento}</span>
+                      {/* Itens */}
+                      <div className="bg-slate-900/30 rounded-xl p-3">
+                        <div className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-2 flex items-center gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-slate-500" /> Itens ({p.itens_pedido.length})
                         </div>
-                        {p.dados_cliente.troco_para && (
-                          <div className="text-amber-400">Troco para: R$ {p.dados_cliente.troco_para}</div>
-                        )}
-                        <div className="pt-2 sm:pt-1 text-slate-400">
-                          Subtotal: <span className="text-slate-300">R$ {p.subtotal.toFixed(2)}</span>
-                        </div>
-                        <div className="text-slate-400">
-                          Taxa Entrega: <span className="text-slate-300">R$ {p.taxa_entrega.toFixed(2)}</span>
-                        </div>
-                        <div className="text-sm font-bold text-orange-400 mt-1">
-                          Total: R$ {p.total.toFixed(2)}
+                        <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
+                          {p.itens_pedido.map((it, itemIdx) => (
+                            <div key={itemIdx} className="flex justify-between items-start text-[11px] text-slate-300 py-1 border-b border-slate-800/30 last:border-b-0">
+                              <span>
+                                <strong className="text-orange-400 font-mono">{it.quantidade}x</strong> {it.nome}
+                                {it.observacoes && (
+                                  <span className="block text-slate-600 italic font-sans pl-4 text-[10px]">Obs: "{it.observacoes}"</span>
+                                )}
+                              </span>
+                              <span className="font-semibold text-slate-200 tabular-nums shrink-0 ml-2">R$ {it.total_item.toFixed(2)}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-
-                    {/* Itens */}
-                    <div className="pt-2 border-t border-slate-800">
-                      <div className="text-slate-400 font-medium uppercase tracking-wider text-[10px] mb-1.5">Itens do Pedido</div>
-                      <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
-                        {p.itens_pedido.map((it, itemIdx) => (
-                          <div key={itemIdx} className="flex justify-between items-start text-[11px] text-slate-300">
-                            <span>
-                              <strong className="text-orange-400 font-mono">{it.quantidade}x</strong> {it.nome}
-                              {it.observacoes && (
-                                <span className="block text-slate-500 italic font-sans pl-4">Obs: "{it.observacoes}"</span>
-                              )}
-                            </span>
-                            <span className="font-semibold text-slate-200">R$ {it.total_item.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
 
                     {/* Status Actions */}
                     {p.status !== 'entregue' && p.status !== 'cancelado' && (
@@ -1499,54 +1526,48 @@ function DashboardView({ loja, pedidos, onUpdateStatus }: DashboardViewProps) {
         <SummaryCard label="Total" value={pedidosLoja.length} color="text-slate-100" bg="bg-slate-800/40" icon={<ShoppingBag size={18} />} dot="bg-slate-400" />
       </div>
 
-      {/* Notification Toggle */}
-      <div className="flex items-center justify-end gap-3 px-1 -mt-2">
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Notificar novos pedidos</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={notifyToggle}
-            onClick={() => {
-              const next = !notifyToggle;
-              setNotifyToggle(next);
-              localStorage.setItem('delivery_whitelabel_notify_new', String(next));
-            }}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-              notifyToggle ? 'bg-orange-500' : 'bg-slate-700'
-            }`}
-          >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-all ${
-                notifyToggle ? 'ml-[1.125rem]' : 'ml-0.5'
-              }`}
-            />
-          </button>
-        </label>
-      </div>
-
       {/* Active Orders */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider flex items-center gap-2">
-            <Bell size={16} className="text-orange-400" />
-            Pedidos Ativos
-            {activeOrders.length > 0 && (
-              <span className="bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded-full font-bold">
-                {activeOrders.length}
-              </span>
-            )}
-          </h3>
-          <span className="text-[10px] text-slate-500">
-            {pedidosLoja.length} pedido(s) no total
-          </span>
+      <div className="bg-slate-800/20 rounded-2xl border border-slate-800/50 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-orange-500/20 border border-orange-500/30">
+              <Bell size={16} className="text-orange-400" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider">Pedidos Ativos</h3>
+              <p className="text-[10px] text-slate-500">{activeOrders.length} aguardando ação</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Notificar</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={notifyToggle}
+                onClick={() => {
+                  const next = !notifyToggle;
+                  setNotifyToggle(next);
+                  localStorage.setItem('delivery_whitelabel_notify_new', String(next));
+                }}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  notifyToggle ? 'bg-orange-500' : 'bg-slate-700'
+                }`}
+              >
+                <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-all ${notifyToggle ? 'ml-[1.125rem]' : 'ml-0.5'}`} />
+              </button>
+            </label>
+            <span className="text-[10px] text-slate-600 font-mono">{pedidosLoja.length} total</span>
+          </div>
         </div>
 
         {activeOrders.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-slate-800 rounded-xl bg-slate-900/30">
-            <CheckCircle2 className="mx-auto text-green-500 mb-3" size={36} />
-            <p className="text-slate-400 text-sm font-semibold">Nenhum pedido ativo</p>
-            <p className="text-slate-500 text-xs mt-1">Os pedidos pendentes aparecerão aqui em tempo real.</p>
+          <div className="text-center py-10 border border-dashed border-slate-800/80 rounded-xl bg-slate-900/20">
+            <div className="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="text-green-400" size={28} />
+            </div>
+            <p className="text-slate-300 text-sm font-semibold">Nenhum pedido ativo</p>
+            <p className="text-slate-500 text-xs mt-1">Pedidos pendentes aparecerão aqui em tempo real.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1554,85 +1575,92 @@ function DashboardView({ loja, pedidos, onUpdateStatus }: DashboardViewProps) {
               const cfg = statusConfig[p.status];
               const next = nextStatus(p.status);
               return (
-                <div key={p.id} className={`${cfg.bg} border rounded-xl p-4 space-y-3`}>
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`h-2 w-2 rounded-full ${cfg.dot} animate-pulse shrink-0`} />
-                      <span className="font-mono text-[10px] text-slate-400 truncate">{p.id}</span>
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase border flex items-center gap-1 ${getStatusColor(p.status)}`}>
-                        {cfg.icon} {cfg.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                        <Clock size={10} />
-                        {timeSince(p.criado_em)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => onUpdateStatus(p.id!, 'cancelado')}
-                        className="p-1 rounded-lg text-rose-400 hover:bg-rose-950/40 transition cursor-pointer"
-                        title="Cancelar Pedido"
-                      >
-                        <XCircle size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                    <div>
-                      <span className="text-slate-500 text-[10px] uppercase">Cliente</span>
-                      <p className="font-semibold text-slate-200">{p.dados_cliente.nome}</p>
-                      <p className="text-slate-400">{p.dados_cliente.telefone}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 text-[10px] uppercase">Itens</span>
-                      {p.itens_pedido.slice(0, 3).map((it, i) => (
-                        <p key={i} className="text-slate-300 truncate">
-                          <span className="text-orange-400 font-mono">{it.quantidade}x</span> {it.nome}
-                        </p>
-                      ))}
-                      {p.itens_pedido.length > 3 && (
-                        <p className="text-slate-500 text-[9px]">+{p.itens_pedido.length - 3} item(ns)</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <span className="text-slate-500 text-[10px] uppercase">Total</span>
-                      <p className="font-bold text-orange-400">R$ {p.total.toFixed(2)}</p>
-                      {p.dados_cliente.tipo_entrega === 'entrega' ? (
-                        <span className="text-[10px] text-slate-400">🚚 Entrega</span>
-                      ) : (
-                        <span className="text-[10px] text-slate-400">🏪 Retirada</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Quick Status Buttons */}
-                  {next && (
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/60">
-                      <span className="text-[10px] text-slate-500 uppercase font-bold">Avançar:</span>
-                      <div className="flex items-center gap-1.5 ml-2">
-                        {FILA_STATUS.slice(FILA_STATUS.indexOf(p.status) + 1).map((st) => {
-                          const isNext = st === next;
-                          return (
-                            <button
-                              key={st}
-                              type="button"
-                              onClick={() => onUpdateStatus(p.id!, st)}
-                              className={`text-[10px] px-2.5 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
-                                isNext
-                                  ? 'bg-orange-500 text-white hover:bg-orange-600'
-                                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                              }`}
-                            >
-                              {statusConfig[st].icon}
-                              {statusConfig[st].label}
-                            </button>
-                          );
-                        })}
+                <div key={p.id} className={`${cfg.bg} border rounded-2xl overflow-hidden group`}>
+                  {/* Colored top bar */}
+                  <div className={`h-1 w-full ${cfg.dot.replace('bg-', 'bg-').replace('400', '500')}`} />
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`h-2.5 w-2.5 rounded-full ${cfg.dot} animate-ping absolute opacity-30`} />
+                        <span className={`h-2.5 w-2.5 rounded-full ${cfg.dot} relative`} />
+                        <span className="font-mono text-[10px] text-slate-500 truncate">{p.id}</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase border flex items-center gap-1.5 ${getStatusColor(p.status)}`}>
+                          {cfg.icon} {cfg.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5 bg-slate-900/40 px-2 py-1 rounded-lg">
+                          <Clock size={10} />
+                          {timeSince(p.criado_em)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateStatus(p.id!, 'cancelado')}
+                          className="p-1.5 rounded-lg text-rose-400/60 hover:text-rose-400 hover:bg-rose-950/30 transition cursor-pointer"
+                          title="Cancelar Pedido"
+                        >
+                          <XCircle size={14} />
+                        </button>
                       </div>
                     </div>
-                  )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                      <div className="bg-slate-900/30 rounded-xl p-3">
+                        <span className="text-slate-500 text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5 mb-1.5">
+                          <span className="w-1 h-1 rounded-full bg-slate-500" /> Cliente
+                        </span>
+                        <p className="font-semibold text-slate-100">{p.dados_cliente.nome}</p>
+                        <p className="text-slate-400 text-[11px] mt-0.5">{p.dados_cliente.telefone}</p>
+                      </div>
+                      <div className="bg-slate-900/30 rounded-xl p-3">
+                        <span className="text-slate-500 text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5 mb-1.5">
+                          <span className="w-1 h-1 rounded-full bg-slate-500" /> Itens
+                        </span>
+                        {p.itens_pedido.slice(0, 3).map((it, i) => (
+                          <p key={i} className="text-slate-300 truncate text-[11px]">
+                            <span className="text-orange-400 font-mono font-bold">{it.quantidade}x</span> {it.nome}
+                          </p>
+                        ))}
+                        {p.itens_pedido.length > 3 && (
+                          <p className="text-slate-600 text-[9px] font-medium mt-0.5">+{p.itens_pedido.length - 3} itens</p>
+                        )}
+                      </div>
+                      <div className="bg-slate-900/30 rounded-xl p-3 flex flex-col justify-center">
+                        <span className="text-slate-500 text-[9px] uppercase font-bold tracking-wider mb-1">Total</span>
+                        <p className="font-black text-lg text-orange-400 tabular-nums">R$ {p.total.toFixed(2)}</p>
+                        <span className={`text-[10px] font-medium mt-0.5 ${p.dados_cliente.tipo_entrega === 'entrega' ? 'text-blue-400' : 'text-violet-400'}`}>
+                          {p.dados_cliente.tipo_entrega === 'entrega' ? '🚚 Entrega' : '🏪 Retirada'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick Status Buttons */}
+                    {next && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-800/40">
+                        <span className="text-[9px] text-slate-600 uppercase font-bold tracking-wider shrink-0">Avançar:</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {FILA_STATUS.slice(FILA_STATUS.indexOf(p.status) + 1).map((st) => {
+                            const isNext = st === next;
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => onUpdateStatus(p.id!, st)}
+                                className={`text-[10px] px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                  isNext
+                                    ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20'
+                                    : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                                }`}
+                              >
+                                {statusConfig[st].icon}
+                                {statusConfig[st].label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1642,20 +1670,27 @@ function DashboardView({ loja, pedidos, onUpdateStatus }: DashboardViewProps) {
 
       {/* Completed / Cancelled Orders */}
       {[...entreguesHoje, ...cancelados].length > 0 && (
-        <div>
-          <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-wider mb-3">Finalizados Hoje</h3>
+        <div className="bg-slate-800/10 rounded-2xl border border-slate-800/40 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-slate-500" />
+            <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-wider">Finalizados Hoje</h3>
+            <span className="text-[10px] text-slate-600 font-mono">({[...entreguesHoje, ...cancelados].length})</span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {[...entreguesHoje, ...cancelados].slice(0, 6).map((p) => {
+            {[...entreguesHoje, ...cancelados].slice(0, 8).map((p) => {
               const cfg = statusConfig[p.status];
               return (
-                <div key={p.id} className="bg-slate-800/30 border border-slate-800/60 rounded-xl p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot} shrink-0`} />
-                    <span className="text-xs text-slate-300 truncate">{p.dados_cliente.nome}</span>
+                <div key={p.id} className="bg-slate-800/20 border border-slate-800/50 rounded-xl p-3 flex items-center justify-between group hover:border-slate-700/60 transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className={`h-2 w-2 rounded-full ${cfg.dot} shrink-0`} />
+                    <div className="min-w-0">
+                      <span className="text-xs text-slate-300 truncate block">{p.dados_cliente.nome}</span>
+                      <span className="text-[9px] text-slate-600 font-mono truncate block">{p.id}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-bold text-slate-500">R$ {p.total.toFixed(2)}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${getStatusColor(p.status)}`}>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <span className="text-[11px] font-bold text-slate-400 tabular-nums">R$ {p.total.toFixed(2)}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${getStatusColor(p.status)}`}>
                       {cfg.label}
                     </span>
                   </div>
@@ -1677,12 +1712,29 @@ function SummaryCard({ label, value, color, bg, icon, dot }: {
   icon: React.ReactNode;
   dot: string;
 }) {
+  const progressColors: Record<string, string> = {
+    'text-amber-400': 'bg-amber-500',
+    'text-blue-400': 'bg-blue-500',
+    'text-indigo-400': 'bg-indigo-500',
+    'text-green-400': 'bg-green-500',
+    'text-rose-400': 'bg-rose-500',
+    'text-slate-100': 'bg-slate-500',
+  };
+  const barColor = progressColors[color] || 'bg-slate-500';
+  const maxVal = Math.max(value, 1);
+  const pct = Math.min((value / 50) * 100, 100);
   return (
-    <div className={`${bg} border border-slate-800/80 rounded-xl p-4 flex flex-col items-center text-center gap-1.5`}>
-      <span className={`${dot} h-2 w-2 rounded-full`} />
-      <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{label}</span>
-      <span className={`text-2xl font-black ${color}`}>{value}</span>
-      <span className="text-slate-600 text-[9px]">{icon}</span>
+    <div className={`${bg} border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center text-center gap-1.5 relative overflow-hidden group hover:scale-[1.03] hover:shadow-lg hover:border-slate-700/80 transition-all duration-300 cursor-default`}>
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+      <div className="relative flex flex-col items-center gap-1.5">
+        <span className={`${dot} h-2 w-2 rounded-full animate-pulse`} />
+        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{label}</span>
+        <span className={`text-2xl font-black tabular-nums ${color}`}>{value}</span>
+        <span className="text-slate-600/60 text-[9px]">{icon}</span>
+        <div className="w-full h-1 bg-slate-900/40 rounded-full mt-1 overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -1724,32 +1776,38 @@ function ProductsCatalogList({ lojaId, searchTerm, onEdit, onDelete, lojaCor }: 
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3">
+    <div className="grid grid-cols-1 gap-2">
       {filtered.map((p) => (
-        <div key={p.id} className="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3 flex gap-3.5 items-center justify-between">
+        <div key={p.id} className="group bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 flex gap-3.5 items-center justify-between hover:border-slate-700/60 hover:bg-slate-900/80 transition-all duration-200">
           <div className="flex items-center gap-3 min-w-0">
-            <img
-              src={p.imagem}
-              alt={p.nome}
-              className="w-12 h-12 rounded-lg object-cover bg-slate-950 shrink-0 border border-slate-800"
-            />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h4 className="font-bold text-xs text-slate-100 truncate">{p.nome}</h4>
-                <span className="text-[9px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-300 font-bold uppercase">{p.categoria}</span>
+            <div className="relative shrink-0">
+              <img
+                src={p.imagem}
+                alt={p.nome}
+                className="w-14 h-14 rounded-xl object-cover bg-slate-950 border border-slate-700/60"
+              />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center">
+                <div className={`w-2 h-2 rounded-full ${p.disponivel ? 'bg-green-400' : 'bg-slate-600'}`} />
               </div>
-              <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{p.descricao || 'Sem descrição cadastrada'}</p>
-              <span className="block text-xs font-black mt-1" style={{ color: lojaCor }}>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-bold text-xs text-slate-100 truncate max-w-[180px]">{p.nome}</h4>
+                <span className="text-[8px] bg-slate-800/80 px-2 py-0.5 rounded-full text-slate-400 font-bold uppercase tracking-wider border border-slate-700/40">{p.categoria}</span>
+                {!p.disponivel && <span className="text-[8px] bg-rose-950/40 text-rose-300 px-1.5 py-0.5 rounded-full font-bold uppercase">Indisponível</span>}
+              </div>
+              <p className="text-[10px] text-slate-500 line-clamp-1 mt-1">{p.descricao || 'Sem descrição'}</p>
+              <span className="inline-block text-sm font-black mt-1.5 tabular-nums" style={{ color: lojaCor }}>
                 R$ {p.preco.toFixed(2)}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
             <button
               type="button"
               onClick={() => onEdit(p)}
-              className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
+              className="p-2 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition cursor-pointer border border-slate-700/40"
               title="Editar Produto"
             >
               <Settings size={13} />
@@ -1757,7 +1815,7 @@ function ProductsCatalogList({ lojaId, searchTerm, onEdit, onDelete, lojaCor }: 
             <button
               type="button"
               onClick={() => onDelete(p.id)}
-              className="p-1.5 rounded-lg bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 transition cursor-pointer"
+              className="p-2 rounded-xl bg-rose-950/30 text-rose-400/70 hover:text-rose-300 hover:bg-rose-900/50 transition cursor-pointer border border-rose-800/30"
               title="Deletar Produto"
             >
               <Trash2 size={13} />
