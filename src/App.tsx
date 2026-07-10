@@ -53,28 +53,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handleHashChange = () => {
-      const newRoute = parseHash();
-      setRoute(newRoute);
+    const resolveRoute = () => {
       if (lojasList.length === 0) return;
-      if (newRoute.slug) {
-        const found = lojasList.find((l) => l.slug_url === newRoute.slug);
+      const r = parseHash();
+      setRoute(r);
+      if (r.slug) {
+        const found = lojasList.find((l) => l.slug_url === r.slug);
         if (found) setCurrentLoja(found);
+      } else if (!r.isAdmin) {
+        setCurrentLoja(lojasList[0]);
+        window.location.hash = `#/${lojasList[0].slug_url}`;
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange();
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [lojasList]);
-
-  useEffect(() => {
-    if (lojasList.length === 0) return;
-    const r = parseHash();
-    setRoute(r);
-    if (r.slug) {
-      const found = lojasList.find((l) => l.slug_url === r.slug);
-      if (found) setCurrentLoja(found);
-    }
+    window.addEventListener('hashchange', resolveRoute);
+    resolveRoute();
+    return () => window.removeEventListener('hashchange', resolveRoute);
   }, [lojasList]);
 
   useEffect(() => {
