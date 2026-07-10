@@ -158,6 +158,8 @@ export default function App() {
 
   const handleMasterLogin = () => {
     setMasterAdminLoggedIn(true);
+    setLoggedGerente(null);
+    localStorage.removeItem('delivery_whitelabel_logged_gerente');
   };
 
   const handleGerenteLogin = (gerente?: Gerente) => {
@@ -216,7 +218,7 @@ export default function App() {
             <span className="bg-orange-500/20 text-orange-400 text-[9px] px-2 py-0.5 rounded-full font-bold">Geral</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-slate-500">admin@deliverywl.com</span>
+            <span className="text-[10px] text-slate-500">admin@admin</span>
             <button onClick={handleLogout} className="text-[10px] text-rose-400 hover:text-rose-300 font-bold cursor-pointer">Sair</button>
           </div>
         </div>
