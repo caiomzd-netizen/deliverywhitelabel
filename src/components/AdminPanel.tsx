@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Database, Copy, Check, Info, FileText, ToggleLeft, ShoppingBag, 
   Plus, Trash2, UserPlus, Settings, Layers, Sparkles, Filter, 
-  Activity, CheckCircle2, ChevronRight, RefreshCw, Percent
+  Activity, CheckCircle2, ChevronRight, RefreshCw, Percent, QrCode,
+  Smartphone, ExternalLink
 } from 'lucide-react';
+import QRCodeDisplay from './QRCodeDisplay';
 import { SQL_SCHEMA_SCRIPT } from '../data';
 import { 
   isSupabaseConfigured, fetchPedidosLocais, getCustomLojas, 
@@ -481,6 +483,56 @@ export default function AdminPanel({
             </span>
           </div>
         </div>
+
+        {/* QR Code + URLs da Loja Ativa */}
+        {currentLoja && (
+          <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 flex flex-col md:flex-row items-center gap-6">
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">QR Code do Cardápio</span>
+              <QRCodeDisplay
+                url={`${window.location.origin}${window.location.pathname.replace(/\/+$/, '')}/#/${currentLoja.slug_url}`}
+                size={130}
+                label="Compartilhe com seus clientes!"
+              />
+            </div>
+            <div className="flex-1 space-y-3">
+              <div>
+                <h4 className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
+                  <Smartphone size={14} className="text-orange-400" />
+                  {currentLoja.nome}
+                </h4>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Links de acesso para sua loja:
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-700/60">
+                  <span className="text-[10px] font-bold text-orange-400 uppercase w-16 shrink-0">Cliente:</span>
+                  <a
+                    href={`#/${currentLoja.slug_url}`}
+                    className="text-xs font-mono text-orange-300 hover:text-orange-200 truncate"
+                  >
+                    /{currentLoja.slug_url}
+                  </a>
+                  <ExternalLink size={12} className="text-slate-500 shrink-0" />
+                </div>
+                <div className="flex items-center gap-2 bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-700/60">
+                  <span className="text-[10px] font-bold text-blue-400 uppercase w-16 shrink-0">Admin:</span>
+                  <a
+                    href={`#/${currentLoja.slug_url}/admin`}
+                    className="text-xs font-mono text-blue-300 hover:text-blue-200 truncate"
+                  >
+                    /{currentLoja.slug_url}/admin
+                  </a>
+                  <ExternalLink size={12} className="text-slate-500 shrink-0" />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Clientes escaneiam o QR Code, abrem o link e podem instalar o PWA no celular — sempre acessando diretamente o cardápio da sua loja.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Informações Whitelabel para oferecer a Distribuidoras e Comércios */}
         <div className="p-4 rounded-xl bg-orange-950/20 border border-orange-500/20 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
