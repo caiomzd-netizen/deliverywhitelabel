@@ -9,7 +9,7 @@ interface AdminLoginProps {
   onBack: () => void;
 }
 
-const MASTER_CREDENTIALS = { email: 'admin@admin', senha: 'Dalchau1988#@' };
+const MASTER_CREDENTIALS = { email: '', senha: '' };
 
 export default function AdminLogin({ mode, loja, onLoginSuccess, onBack }: AdminLoginProps) {
   const [email, setEmail] = useState('');
