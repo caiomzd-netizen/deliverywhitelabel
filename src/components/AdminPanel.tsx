@@ -3,14 +3,15 @@ import {
   Database, Copy, Check, Info, FileText, ToggleLeft, ShoppingBag, 
   Plus, Trash2, UserPlus, Settings, Layers, Sparkles, Filter, 
   Activity, CheckCircle2, ChevronRight, RefreshCw, Percent, QrCode,
-  Smartphone, ExternalLink
+  Smartphone, ExternalLink, LayoutDashboard, Bell, Clock, 
+  ArrowRight, XCircle
 } from 'lucide-react';
 import QRCodeDisplay from './QRCodeDisplay';
 import { SQL_SCHEMA_SCRIPT } from '../data';
 import { 
   isSupabaseConfigured, fetchPedidosLocais, getCustomLojas, 
   saveCustomLoja, getCustomProdutos, saveCustomProduto, deleteCustomProduto,
-  getCustomGerentes, saveCustomGerente
+  getCustomGerentes, saveCustomGerente, updatePedidoStatusLocal
 } from '../supabase';
 import { Pedido, Loja, Produto, Gerente } from '../types';
 
@@ -39,7 +40,7 @@ export default function AdminPanel({
   onLoggedGerenteChange
 }: AdminPanelProps) {
   // Tabs for the administration panel
-  const [activeTab, setActiveTab] = useState<'lojas' | 'produtos' | 'pedidos' | 'sql'>('lojas');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'lojas' | 'produtos' | 'pedidos' | 'sql'>('dashboard');
   const [copied, setCopied] = useState(false);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -410,17 +411,6 @@ export default function AdminPanel({
     setProdEstoque('25');
   };
 
-  const getStatusColor = (status: Pedido['status']) => {
-    switch (status) {
-      case 'pendente': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'preparando': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'saiu_entrega': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'entregue': return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelado': return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   // Get active products for this store
   // Since we also have demo products loaded in app, let's grab the custom ones or the active product list
   const activeNichePreset = Object.keys(NICHE_PRESETS).find(
@@ -565,6 +555,19 @@ export default function AdminPanel({
         {/* Tabs de Navegação */}
         <div className="flex overflow-x-auto border-b border-slate-800 gap-2 scrollbar-none pb-0.5">
           <button
+            id="tab-dashboard"
+            onClick={() => { setActiveTab('dashboard'); handleResetProductForm(); }}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+              activeTab === 'dashboard'
+                ? 'border-orange-500 text-orange-400 bg-orange-950/20'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+            }`}
+          >
+            <LayoutDashboard size={16} />
+            Dashboard
+          </button>
+
+          <button
             id="tab-lojas"
             onClick={() => { setActiveTab('lojas'); handleResetProductForm(); }}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
@@ -621,6 +624,22 @@ export default function AdminPanel({
             Código SQL Supabase
           </button>
         </div>
+
+        {/* ==================== TAB CONTENT: DASHBOARD ==================== */}
+        {activeTab === 'dashboard' && (
+          <DashboardView
+            loja={currentLoja}
+            pedidos={pedidos}
+            onUpdateStatus={(pedidoId, novoStatus) => {
+              const updated = updatePedidoStatusLocal(pedidoId, novoStatus);
+              if (updated) {
+                setPedidos((prev) =>
+                  prev.map((p) => (p.id === pedidoId ? { ...p, status: novoStatus } : p))
+                );
+              }
+            }}
+          />
+        )}
 
         {/* ==================== TAB CONTENT: LOJAS & USUARIOS ==================== */}
         {activeTab === 'lojas' && (
@@ -1131,6 +1150,237 @@ export default function AdminPanel({
         )}
 
       </div>
+    </div>
+  );
+}
+
+function getStatusColor(status: Pedido['status']) {
+  switch (status) {
+    case 'pendente': return 'bg-amber-100 text-amber-800 border-amber-200';
+    case 'preparando': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'saiu_entrega': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+    case 'entregue': return 'bg-green-100 text-green-800 border-green-200';
+    case 'cancelado': return 'bg-rose-100 text-rose-800 border-rose-200';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+}
+
+// Subcomponent: Dashboard de Acompanhamento de Pedidos
+interface DashboardViewProps {
+  loja: Loja;
+  pedidos: Pedido[];
+  onUpdateStatus: (pedidoId: string, novoStatus: Pedido['status']) => void;
+}
+
+function DashboardView({ loja, pedidos, onUpdateStatus }: DashboardViewProps) {
+  const FILA_STATUS: Pedido['status'][] = ['pendente', 'preparando', 'saiu_entrega', 'entregue'];
+
+  const pedidosLoja = pedidos.filter((p) => p.loja_id === loja.id);
+  const pendentes = pedidosLoja.filter((p) => p.status === 'pendente');
+  const preparando = pedidosLoja.filter((p) => p.status === 'preparando');
+  const saiuEntrega = pedidosLoja.filter((p) => p.status === 'saiu_entrega');
+  const entreguesHoje = pedidosLoja.filter(
+    (p) => p.status === 'entregue' && p.criado_em &&
+      new Date(p.criado_em).toDateString() === new Date().toDateString()
+  );
+  const cancelados = pedidosLoja.filter((p) => p.status === 'cancelado');
+
+  const activeOrders = [...pendentes, ...preparando, ...saiu_entrega];
+
+  const nextStatus = (atual: Pedido['status']): Pedido['status'] | null => {
+    const idx = FILA_STATUS.indexOf(atual);
+    if (idx === -1 || idx >= FILA_STATUS.length - 1) return null;
+    return FILA_STATUS[idx + 1];
+  };
+
+  const timeSince = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'Agora';
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60);
+    return `${h}h ${min % 60}min`;
+  };
+
+  const statusConfig: Record<Pedido['status'], { label: string; bg: string; dot: string; icon: React.ReactNode }> = {
+    pendente: { label: 'Pendente', bg: 'bg-amber-950/30 border-amber-800/40', dot: 'bg-amber-400', icon: <Clock size={14} /> },
+    preparando: { label: 'Preparando', bg: 'bg-blue-950/30 border-blue-800/40', dot: 'bg-blue-400', icon: <Activity size={14} /> },
+    saiu_entrega: { label: 'Saiu p/ Entrega', bg: 'bg-indigo-950/30 border-indigo-800/40', dot: 'bg-indigo-400', icon: <ArrowRight size={14} /> },
+    entregue: { label: 'Entregue', bg: 'bg-green-950/30 border-green-800/40', dot: 'bg-green-400', icon: <CheckCircle2 size={14} /> },
+    cancelado: { label: 'Cancelado', bg: 'bg-rose-950/30 border-rose-800/40', dot: 'bg-rose-400', icon: <XCircle size={14} /> },
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <SummaryCard label="Pendentes" value={pendentes.length} color="text-amber-400" bg="bg-amber-950/20" icon={<Clock size={18} />} dot="bg-amber-400" />
+        <SummaryCard label="Preparando" value={preparando.length} color="text-blue-400" bg="bg-blue-950/20" icon={<Activity size={18} />} dot="bg-blue-400" />
+        <SummaryCard label="Saiu Entrega" value={saiuEntrega.length} color="text-indigo-400" bg="bg-indigo-950/20" icon={<ArrowRight size={18} />} dot="bg-indigo-400" />
+        <SummaryCard label="Entregues Hoje" value={entreguesHoje.length} color="text-green-400" bg="bg-green-950/20" icon={<CheckCircle2 size={18} />} dot="bg-green-400" />
+        <SummaryCard label="Cancelados" value={cancelados.length} color="text-rose-400" bg="bg-rose-950/20" icon={<XCircle size={18} />} dot="bg-rose-400" />
+        <SummaryCard label="Total" value={pedidosLoja.length} color="text-slate-100" bg="bg-slate-800/40" icon={<ShoppingBag size={18} />} dot="bg-slate-400" />
+      </div>
+
+      {/* Active Orders */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider flex items-center gap-2">
+            <Bell size={16} className="text-orange-400" />
+            Pedidos Ativos
+            {activeOrders.length > 0 && (
+              <span className="bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded-full font-bold">
+                {activeOrders.length}
+              </span>
+            )}
+          </h3>
+          <span className="text-[10px] text-slate-500">
+            {pedidosLoja.length} pedido(s) no total
+          </span>
+        </div>
+
+        {activeOrders.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-slate-800 rounded-xl bg-slate-900/30">
+            <CheckCircle2 className="mx-auto text-green-500 mb-3" size={36} />
+            <p className="text-slate-400 text-sm font-semibold">Nenhum pedido ativo</p>
+            <p className="text-slate-500 text-xs mt-1">Os pedidos pendentes aparecerão aqui em tempo real.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {activeOrders.map((p) => {
+              const cfg = statusConfig[p.status];
+              const next = nextStatus(p.status);
+              return (
+                <div key={p.id} className={`${cfg.bg} border rounded-xl p-4 space-y-3`}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`h-2 w-2 rounded-full ${cfg.dot} animate-pulse shrink-0`} />
+                      <span className="font-mono text-[10px] text-slate-400 truncate">{p.id}</span>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase border flex items-center gap-1 ${getStatusColor(p.status)}`}>
+                        {cfg.icon} {cfg.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                        <Clock size={10} />
+                        {timeSince(p.criado_em)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(p.id!, 'cancelado')}
+                        className="p-1 rounded-lg text-rose-400 hover:bg-rose-950/40 transition cursor-pointer"
+                        title="Cancelar Pedido"
+                      >
+                        <XCircle size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-500 text-[10px] uppercase">Cliente</span>
+                      <p className="font-semibold text-slate-200">{p.dados_cliente.nome}</p>
+                      <p className="text-slate-400">{p.dados_cliente.telefone}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[10px] uppercase">Itens</span>
+                      {p.itens_pedido.slice(0, 3).map((it, i) => (
+                        <p key={i} className="text-slate-300 truncate">
+                          <span className="text-orange-400 font-mono">{it.quantidade}x</span> {it.nome}
+                        </p>
+                      ))}
+                      {p.itens_pedido.length > 3 && (
+                        <p className="text-slate-500 text-[9px]">+{p.itens_pedido.length - 3} item(ns)</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-500 text-[10px] uppercase">Total</span>
+                      <p className="font-bold text-orange-400">R$ {p.total.toFixed(2)}</p>
+                      {p.dados_cliente.tipo_entrega === 'entrega' ? (
+                        <span className="text-[10px] text-slate-400">🚚 Entrega</span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">🏪 Retirada</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quick Status Buttons */}
+                  {next && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/60">
+                      <span className="text-[10px] text-slate-500 uppercase font-bold">Avançar:</span>
+                      <div className="flex items-center gap-1.5 ml-2">
+                        {FILA_STATUS.slice(FILA_STATUS.indexOf(p.status) + 1).map((st) => {
+                          const isNext = st === next;
+                          return (
+                            <button
+                              key={st}
+                              type="button"
+                              onClick={() => onUpdateStatus(p.id!, st)}
+                              className={`text-[10px] px-2.5 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
+                                isNext
+                                  ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                              }`}
+                            >
+                              {statusConfig[st].icon}
+                              {statusConfig[st].label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Completed / Cancelled Orders */}
+      {[...entreguesHoje, ...cancelados].length > 0 && (
+        <div>
+          <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-wider mb-3">Finalizados Hoje</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {[...entreguesHoje, ...cancelados].slice(0, 6).map((p) => {
+              const cfg = statusConfig[p.status];
+              return (
+                <div key={p.id} className="bg-slate-800/30 border border-slate-800/60 rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot} shrink-0`} />
+                    <span className="text-xs text-slate-300 truncate">{p.dados_cliente.nome}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-bold text-slate-500">R$ {p.total.toFixed(2)}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${getStatusColor(p.status)}`}>
+                      {cfg.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, color, bg, icon, dot }: {
+  label: string;
+  value: number;
+  color: string;
+  bg: string;
+  icon: React.ReactNode;
+  dot: string;
+}) {
+  return (
+    <div className={`${bg} border border-slate-800/80 rounded-xl p-4 flex flex-col items-center text-center gap-1.5`}>
+      <span className={`${dot} h-2 w-2 rounded-full`} />
+      <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{label}</span>
+      <span className={`text-2xl font-black ${color}`}>{value}</span>
+      <span className="text-slate-600 text-[9px]">{icon}</span>
     </div>
   );
 }

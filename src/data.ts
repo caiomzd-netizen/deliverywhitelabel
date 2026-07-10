@@ -442,20 +442,22 @@ export const DEMO_PRODUTOS: Produto[] = [
 
 export const SQL_SCHEMA_SCRIPT = `-- ==========================================
 -- SCRIPT DE CRIAÇÃO DO BANCO DE DADOS (SUPABASE / POSTGRESQL)
+-- ARQUITETURA: admin_geral > admin_loja > funcionario > cliente
+-- Multi-inquilino (várias lojas no mesmo banco)
 -- Cole este script no SQL Editor do seu painel Supabase
 -- ==========================================
 
 -- 1. Criar extensão para uuid (geralmente ativa por padrão)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Tabela de Lojas
+-- 2. Tabela de Lojas (cada loja é um inquilino/distribuidora/restaurante)
 CREATE TABLE IF NOT EXISTS lojas (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nome VARCHAR(100) NOT NULL,
     slug_url VARCHAR(100) UNIQUE NOT NULL,
     logo TEXT,
     banner TEXT,
-    cor_tema VARCHAR(30) DEFAULT '#rose-600',
+    cor_tema VARCHAR(30) DEFAULT '#f97316',
     telefone_whatsapp VARCHAR(20) NOT NULL,
     endereco_fisico TEXT,
     taxa_entrega DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -464,10 +466,28 @@ CREATE TABLE IF NOT EXISTS lojas (
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Criar índices de busca rápida
 CREATE INDEX IF NOT EXISTS idx_lojas_slug ON lojas(slug_url);
 
--- 3. Tabela de Produtos
+-- 3. Tabela de Usuários (centraliza todos os papéis)
+-- roles: admin_geral (dono da plataforma), admin_loja (gerente da loja),
+--        funcionario (auxiliar da loja), cliente (consumidor final)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome VARCHAR(150) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    senha TEXT NOT NULL,
+    role VARCHAR(30) NOT NULL CHECK (role IN ('admin_geral', 'admin_loja', 'funcionario', 'cliente')),
+    loja_id UUID REFERENCES lojas(id) ON DELETE SET NULL,
+    telefone VARCHAR(20),
+    ativo BOOLEAN NOT NULL DEFAULT true,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_usuarios_role ON usuarios(role);
+CREATE INDEX IF NOT EXISTS idx_usuarios_loja ON usuarios(loja_id);
+CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+
+-- 4. Tabela de Produtos (cardápio de cada loja)
 CREATE TABLE IF NOT EXISTS produtos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     loja_id UUID NOT NULL REFERENCES lojas(id) ON DELETE CASCADE,
@@ -480,44 +500,103 @@ CREATE TABLE IF NOT EXISTS produtos (
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Criar índices de produtos
 CREATE INDEX IF NOT EXISTS idx_produtos_loja ON produtos(loja_id);
 CREATE INDEX IF NOT EXISTS idx_produtos_disponivel ON produtos(disponivel);
 
--- 4. Tabela de Pedidos
+-- 5. Tabela de Pedidos
 CREATE TABLE IF NOT EXISTS pedidos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     loja_id UUID NOT NULL REFERENCES lojas(id) ON DELETE CASCADE,
-    dados_cliente JSONB NOT NULL, -- Contém {nome, telefone, tipo_entrega, endereco, forma_pagamento, troco}
-    itens_pedido JSONB NOT NULL, -- Lista de itens [{produto_id, nome, quantidade, preco_unitario, total_item, observacoes}]
+    cliente_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+    dados_cliente JSONB NOT NULL,
+    itens_pedido JSONB NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
     taxa_entrega DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     total DECIMAL(10,2) NOT NULL,
-    status VARCHAR(30) NOT NULL DEFAULT 'pendente', -- pendente, preparando, saiu_entrega, entregue, cancelado
+    status VARCHAR(30) NOT NULL DEFAULT 'pendente',
+    observacao_interna TEXT,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_pedidos_loja ON pedidos(loja_id);
+CREATE INDEX IF NOT EXISTS idx_pedidos_status ON pedidos(status);
+CREATE INDEX IF NOT EXISTS idx_pedidos_cliente ON pedidos(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_pedidos_criado_em ON pedidos(criado_em DESC);
+
+-- 6. Tabela de Histórico de Status dos Pedidos (auditoria)
+CREATE TABLE IF NOT EXISTS pedido_status_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pedido_id UUID NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
+    status_anterior VARCHAR(30),
+    status_novo VARCHAR(30) NOT NULL,
+    alterado_por UUID REFERENCES usuarios(id) ON DELETE SET NULL,
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Índices de pedidos
-CREATE INDEX IF NOT EXISTS idx_pedidos_loja ON pedidos(loja_id);
-CREATE INDEX IF NOT EXISTS idx_pedidos_status ON pedidos(status);
-CREATE INDEX IF NOT EXISTS idx_pedidos_criado_em ON pedidos(criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_status_log_pedido ON pedido_status_log(pedido_id);
 
--- Habilitar Row Level Security (RLS) se necessário ou deixar aberto para simplificar o início
+-- === SEED: Admin Geral Padrão ===
+INSERT INTO usuarios (id, nome, email, senha, role, loja_id, ativo)
+VALUES (
+    uuid_generate_v4(),
+    'Administrador Master',
+    'admin@deliverywl.com',
+    'admin123',
+    'admin_geral',
+    NULL,
+    true
+) ON CONFLICT (email) DO NOTHING;
+
+-- === ROW LEVEL SECURITY ===
 ALTER TABLE lojas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE produtos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pedidos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pedido_status_log ENABLE ROW LEVEL SECURITY;
 
--- Políticas de acesso públicas para leitura de Lojas e Produtos
-CREATE POLICY "Permitir leitura pública de lojas" ON lojas
+-- Políticas de leitura pública para lojas e produtos (clientes veem sem login)
+CREATE POLICY "Leitura pública de lojas ativas" ON lojas
     FOR SELECT USING (ativo = true);
 
-CREATE POLICY "Permitir leitura pública de produtos" ON produtos
+CREATE POLICY "Leitura pública de produtos disponíveis" ON produtos
     FOR SELECT USING (disponivel = true);
 
--- Políticas para Pedidos (inserção é livre para os clientes, leitura somente autenticado ou via chave de acesso se necessário)
-CREATE POLICY "Permitir inserção de pedidos por qualquer cliente" ON pedidos
+-- Clientes podem inserir pedidos sem autenticação
+CREATE POLICY "Inserção pública de pedidos" ON pedidos
     FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Permitir leitura de pedidos da sua loja" ON pedidos
-    FOR SELECT USING (true); -- No ambiente whitelabel real, filtre pelo ID da loja gerenciada
+-- Admin geral vê tudo (role = admin_geral)
+CREATE POLICY "Admin geral - tudo" ON lojas FOR ALL USING (
+    (SELECT role FROM usuarios WHERE id = auth.uid()) = 'admin_geral'
+);
+CREATE POLICY "Admin geral - tudo usuarios" ON usuarios FOR ALL USING (
+    (SELECT role FROM usuarios WHERE id = auth.uid()) = 'admin_geral'
+);
+CREATE POLICY "Admin geral - tudo pedidos" ON pedidos FOR ALL USING (
+    (SELECT role FROM usuarios WHERE id = auth.uid()) = 'admin_geral'
+);
+
+-- Admin loja vê apenas dados da sua loja
+CREATE POLICY "Admin loja - sua loja" ON lojas FOR SELECT USING (
+    id IN (SELECT loja_id FROM usuarios WHERE id = auth.uid() AND role = 'admin_loja')
+);
+CREATE POLICY "Admin loja - produtos da loja" ON produtos FOR ALL USING (
+    loja_id IN (SELECT loja_id FROM usuarios WHERE id = auth.uid() AND role = 'admin_loja')
+);
+CREATE POLICY "Admin loja - pedidos da loja" ON pedidos FOR ALL USING (
+    loja_id IN (SELECT loja_id FROM usuarios WHERE id = auth.uid() AND role = 'admin_loja')
+);
+
+-- Funcionário vê apenas pedidos da loja (leitura e atualização de status)
+CREATE POLICY "Funcionario - pedidos da loja" ON pedidos FOR SELECT USING (
+    loja_id IN (SELECT loja_id FROM usuarios WHERE id = auth.uid() AND role = 'funcionario')
+);
+CREATE POLICY "Funcionario - atualizar status" ON pedidos FOR UPDATE USING (
+    loja_id IN (SELECT loja_id FROM usuarios WHERE id = auth.uid() AND role = 'funcionario')
+);
+
+-- Política para log de status (inserção automática via trigger)
+CREATE POLICY "Inserir log de status" ON pedido_status_log
+    FOR INSERT WITH CHECK (true);
 `;

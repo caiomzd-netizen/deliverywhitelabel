@@ -8,7 +8,6 @@ interface StoreMenuProps {
   cart: CartItem[];
   onAddToCart: (produto: Produto, quantidade: number, observacoes?: string) => void;
   onOpenCart: () => void;
-  onOpenAdmin: () => void;
 }
 
 export default function StoreMenu({
@@ -16,8 +15,7 @@ export default function StoreMenu({
   produtos,
   cart,
   onAddToCart,
-  onOpenCart,
-  onOpenAdmin
+  onOpenCart
 }: StoreMenuProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
@@ -69,15 +67,6 @@ export default function StoreMenu({
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-950/40 to-black/10" />
-        
-        {/* Floating Quick Swapping indicator for Admin */}
-        <button
-          id="btn-admin-floating"
-          onClick={onOpenAdmin}
-          className="absolute top-3 right-3 bg-white/95 text-gray-900 backdrop-blur-xs text-[10px] uppercase font-black tracking-wider px-3 py-2 rounded-xl hover:bg-orange-50 transition flex items-center gap-1.5 shadow-lg border border-orange-100 cursor-pointer"
-        >
-          <span>🔧</span> Painel Dev
-        </button>
       </div>
 
       {/* Perfil da Loja */}

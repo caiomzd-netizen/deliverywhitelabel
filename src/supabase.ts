@@ -226,3 +226,20 @@ export async function fetchPedidosLocais(): Promise<Pedido[]> {
     return [];
   }
 }
+
+export function updatePedidoStatusLocal(
+  pedidoId: string,
+  novoStatus: Pedido['status']
+): Pedido | null {
+  try {
+    const raw = localStorage.getItem('delivery_whitelabel_pedidos');
+    const pedidos: Pedido[] = raw ? JSON.parse(raw) : [];
+    const idx = pedidos.findIndex((p) => p.id === pedidoId);
+    if (idx === -1) return null;
+    pedidos[idx] = { ...pedidos[idx], status: novoStatus };
+    localStorage.setItem('delivery_whitelabel_pedidos', JSON.stringify(pedidos));
+    return pedidos[idx];
+  } catch {
+    return null;
+  }
+}
