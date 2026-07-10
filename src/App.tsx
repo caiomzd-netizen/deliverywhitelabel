@@ -11,8 +11,8 @@ import QRCodeDisplay from './components/QRCodeDisplay';
 
 function parseHash(): { slug: string | null; isAdmin: boolean } {
   const hash = window.location.hash.replace('#/', '').replace(/\/+$/, '');
-  if (hash.endsWith('/admin')) {
-    return { slug: hash.replace('/admin', '') || null, isAdmin: true };
+  if (hash === 'admin' || hash.endsWith('/admin')) {
+    return { slug: hash === 'admin' ? null : hash.replace('/admin', ''), isAdmin: true };
   }
   return { slug: hash || null, isAdmin: false };
 }
