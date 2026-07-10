@@ -105,12 +105,6 @@ export default function AdminLogin({ mode, loja, onLoginSuccess, onBack }: Admin
             Entrar
           </button>
 
-          {mode === 'master' && (
-            <p className="text-[10px] text-slate-500 text-center">
-              Credenciais padrão: <span className="font-mono text-slate-400">admin@admin</span> / <span className="font-mono text-slate-400">Dalchau1988#@</span>
-            </p>
-          )}
-
           <button
             type="button"
             onClick={onBack}
