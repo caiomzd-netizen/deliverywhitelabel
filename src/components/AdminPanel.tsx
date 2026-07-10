@@ -770,6 +770,49 @@ export default function AdminPanel({
                     </div>
                   </div>
 
+                  {/* Dados de Acesso do Gerente */}
+                  <div className="md:col-span-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center gap-2 pb-3">
+                      <UserPlus className="text-orange-500" size={16} />
+                      <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider">Dados de Acesso do Gerente da Loja (obrigatório)</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase">Nome do Gerente *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ex: João Silva"
+                          value={novaLojaGerenteNome}
+                          onChange={(e) => setNovaLojaGerenteNome(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase">Email do Gerente *</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="gerente@email.com"
+                          value={novaLojaGerenteEmail}
+                          onChange={(e) => setNovaLojaGerenteEmail(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase">Senha do Gerente *</label>
+                        <input
+                          type="password"
+                          required
+                          placeholder="••••••"
+                          value={novaLojaGerenteSenha}
+                          onChange={(e) => setNovaLojaGerenteSenha(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="md:col-span-2 pt-3 flex justify-end">
                     <button
                       type="submit"
