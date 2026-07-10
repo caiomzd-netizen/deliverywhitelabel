@@ -1185,7 +1185,7 @@ function DashboardView({ loja, pedidos, onUpdateStatus }: DashboardViewProps) {
   );
   const cancelados = pedidosLoja.filter((p) => p.status === 'cancelado');
 
-  const activeOrders = [...pendentes, ...preparando, ...saiu_entrega];
+  const activeOrders = [...pendentes, ...preparando, ...saiuEntrega];
 
   const nextStatus = (atual: Pedido['status']): Pedido['status'] | null => {
     const idx = FILA_STATUS.indexOf(atual);
